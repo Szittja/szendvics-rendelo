@@ -233,13 +233,19 @@ const styles = {
         <div style={styles.pageContainer}>
           <div style={styles.headerWrap}>
             
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <div>
-                <h1 style={{ ...styles.textMain, margin: 0, fontSize: '24px' }}>🥪 Szendvics Rendelő</h1>
-                <span style={{ color: '#64748b', fontSize: '14px' }}>Felhasználó: <b>{user.email}</b></span>
-              </div>
+            {/* BAL OLDAL: Cím és Felhasználó neve */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+              <h1 style={{ ...styles.textMain, margin: 0, fontSize: '24px' }}>🥪 Szendvics Rendelő</h1>
+              
+              {/* Modern felhasználónév kijelző */}
+              {user && (
+                <div style={{ background: '#f1f5f9', padding: '6px 14px', borderRadius: '20px', fontSize: '14px', color: '#475569', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  👤 {user.name ? user.name : user.email}
+                </div>
+              )}
             </div>
 
+            {/* JOBB OLDAL: Gombok (ez marad a régi) */}
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               {isAdminView && user?.role === 'ADMIN' && <button style={styles.btnPrimary} onClick={() => setIsAdminView(false)}>Felhasználói Nézet</button>}
               {!isAdminView && user?.role === 'ADMIN' && <button style={styles.btnPrimary} onClick={() => setIsAdminView(true)}>📊 Admin Műszerfal</button>}
