@@ -49,7 +49,7 @@ function App() {
   const disabledStyle = { opacity: 0.5, cursor: 'not-allowed' }
 
   const loadSandwiches = () => {
-    fetch('http://localhost:3000/api/sandwiches')
+    fetch(`${import.meta.env.VITE_API_URL}/api/sandwiches`)
       .then(res => res.json())
       .then(data => setSandwiches(data))
   }
@@ -57,16 +57,16 @@ function App() {
   useEffect(() => { loadSandwiches() }, [])
 
   const loadMyOrders = async (userId) => {
-    const res = await fetch(`http://localhost:3000/api/orders/user/${userId}`)
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/user/${userId}`)
     const data = await res.json()
     setMyOrders(data)
     setHasUnpaid(data.some(order => order.isPaid === false))
   }
 
   const loadAdminData = async () => {
-    const resOrders = await fetch('http://localhost:3000/api/admin/orders')
+    const resOrders = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders`)
     setAdminOrders(await resOrders.json())
-    const resSummary = await fetch('http://localhost:3000/api/admin/summary')
+    const resSummary = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/summary`)
     setAdminSummary(await resSummary.json())
   }
 
@@ -77,7 +77,7 @@ function App() {
 
   const handleAddSandwich = async (e) => {
     e.preventDefault()
-    await fetch('http://localhost:3000/api/admin/sandwiches', {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/admin/sandwiches`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: newSandwichName, price: newSandwichPrice })
     })
@@ -86,7 +86,7 @@ function App() {
   }
 
   const handleUpdateSandwich = async (id) => {
-    await fetch(`http://localhost:3000/api/admin/sandwiches/${id}`, {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/admin/sandwiches/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: editSandwichName, price: editSandwichPrice, isActive: editSandwichIsActive })
     })
@@ -109,7 +109,7 @@ function App() {
   const submitOrder = async () => {
     const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
     const items = cart.map(item => ({ sandwichId: item.sandwichId, quantity: item.quantity }))
-    const res = await fetch('http://localhost:3000/api/orders', {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, items, totalPrice })
     })
@@ -124,7 +124,7 @@ function App() {
   }
 
   const updateOrderItem = async (itemId, newQuantity) => {
-    const res = await fetch(`http://localhost:3000/api/order-items/${itemId}`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/order-items/${itemId}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ newQuantity })
     })
@@ -133,14 +133,14 @@ function App() {
 
   const cancelOrder = async (orderId) => {
     if(window.confirm("Biztosan törlöd ezt a rendelést?")) {
-      await fetch(`http://localhost:3000/api/orders/${orderId}`, { method: 'DELETE' })
+      await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}`, { method: 'DELETE' })
       loadMyOrders(user.id)
     }
   }
 
   const handleLogin = async (e) => {
     e.preventDefault()
-    const res = await fetch('http://localhost:3000/api/login', {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/login`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     })
@@ -150,7 +150,7 @@ function App() {
 
   const handleRegister = async (e) => {
     e.preventDefault()
-    const res = await fetch('http://localhost:3000/api/register', {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/register`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password })
     })
@@ -254,7 +254,7 @@ function App() {
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '10px' }}>{order.totalPrice} Ft</div>
                     <button onClick={async () => {
-                      await fetch(`http://localhost:3000/api/admin/orders/${order.id}/pay`, { method: 'PUT' });
+                      await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${order.id}/pay`, { method: 'PUT' });
                       loadAdminData();
                     }} style={{ ...styles.btnPrimary, background: order.isPaid ? '#10b981' : '#f59e0b', width: '120px' }}>
                       {order.isPaid ? '✅ Fizetve' : '⏳ Tartozik'}
