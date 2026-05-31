@@ -25,6 +25,7 @@ function App() {
   const [editingSandwichId, setEditingSandwichId] = useState(null)
   const [editSandwichName, setEditSandwichName] = useState('')
   const [editSandwichPrice, setEditSandwichPrice] = useState('')
+  const [editSandwichIsActive, setEditSandwichIsActive] = useState(true)
 
   const [isOrderingOpen, setIsOrderingOpen] = useState(false)
 
@@ -87,10 +88,11 @@ function App() {
   const handleUpdateSandwich = async (id) => {
     await fetch(`http://localhost:3000/api/admin/sandwiches/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: editSandwichName, price: editSandwichPrice })
+      body: JSON.stringify({ name: editSandwichName, price: editSandwichPrice, isActive: editSandwichIsActive })
     })
     setEditingSandwichId(null)
     loadSandwiches()
+    if (!isAdminView && user) loadMyOrders(user.id) // Frissítjük a user rendeléseit, hátha eltűnt belőle valami
   }
 
   const addToCart = (sandwich) => {
@@ -275,11 +277,17 @@ function App() {
 
                 <h4 style={{ marginBottom: '15px' }}>Jelenlegi szendvicsek</h4>
                 {sandwiches.map(sw => (
-                  <div key={sw.id} style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '10px' }}>
+                  <div key={sw.id} style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '10px', background: sw.isActive ? 'white' : '#f1f5f9', opacity: sw.isActive ? 1 : 0.7 }}>
                     {editingSandwichId === sw.id ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <input type="text" value={editSandwichName} onChange={e => setEditSandwichName(e.target.value)} style={styles.input} />
                         <input type="number" value={editSandwichPrice} onChange={e => setEditSandwichPrice(e.target.value)} style={styles.input} />
+                        
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                          <input type="checkbox" checked={editSandwichIsActive} onChange={e => setEditSandwichIsActive(e.target.checked)} style={{ width: '20px', height: '20px' }}/>
+                          Elérhető a kínálatban (Aktív)
+                        </label>
+
                         <div style={{ display: 'flex', gap: '5px' }}>
                           <button onClick={() => handleUpdateSandwich(sw.id)} style={{ ...styles.btnSuccess, flex: 1, padding: '6px' }}>Mentés</button>
                           <button onClick={() => setEditingSandwichId(null)} style={{ ...styles.btnDanger, flex: 1, padding: '6px' }}>Mégse</button>
@@ -287,8 +295,11 @@ function App() {
                       </div>
                     ) : (
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div><b>{sw.name}</b> <br/><span style={{ color: '#10b981' }}>{sw.price} Ft</span></div>
-                        <button onClick={() => { setEditingSandwichId(sw.id); setEditSandwichName(sw.name); setEditSandwichPrice(sw.price); }} style={{ ...styles.btnPrimary, padding: '6px 12px', fontSize: '13px', background: '#f59e0b' }}>Szerkesztés</button>
+                        <div>
+                          <b>{sw.name}</b> {sw.isActive ? '✅' : '❌'}<br/>
+                          <span style={{ color: sw.isActive ? '#10b981' : '#64748b' }}>{sw.price} Ft</span>
+                        </div>
+                        <button onClick={() => { setEditingSandwichId(sw.id); setEditSandwichName(sw.name); setEditSandwichPrice(sw.price); setEditSandwichIsActive(sw.isActive); }} style={{ ...styles.btnPrimary, padding: '6px 12px', fontSize: '13px', background: '#f59e0b' }}>Szerkesztés</button>
                       </div>
                     )}
                   </div>
@@ -304,7 +315,7 @@ function App() {
             <div>
               <h2>Elérhető finomságok</h2>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                {sandwiches.map(sw => (
+                {sandwiches.filter(sw => sw.isActive).map(sw => (
                   <div key={sw.id} style={{ ...styles.card, margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
                     <div>
                       <h3 style={{ margin: '0 0 5px 0', fontSize: '18px' }}>{sw.name}</h3>

@@ -38,7 +38,20 @@ Egy belső, céges szendvicsrendelő webes alkalmazást fejlesztünk, amit a kol
    - Kollégák összesített rendeléseinek listája Fizetve/Tartozik gombokkal.
    - Kínálat (Sandwich) menedzselése: új hozzáadása, meglévők szerkesztése (név, ár módosítása).
 
-## 🚀 Jelenlegi Státusz & Következő Lépés
-A projekt stabil, az adatbázis szinkronban van (Prisma v6-on). A következő lépés, hogy a frontendet is megtanítsuk az időablak kezelésére, hogy a gombok vizuálisan is inaktívak legyenek, ha nincs rendelési időszak.
+## 🚀 Jelenlegi Státusz
+A projekt stabil alappal rendelkezik, az adatbázis szinkronban van (Prisma v6-on). A felületen a rendelési időablak (kedd 0:00 - szerda 10:00) logikája mind a frontend (vizuális inaktiválás), mind a backend (403-as hibakód) oldalán implementálva van. A rendszer fel van készítve az élesítésre (Deployment).
 
-Kérlek, jelezz vissza, ha a kontextus világos, és írd le, hogy készen állsz a folytatásra!
+## 🌍 Telepítés és Helyi Futtatás (Deployment)
+
+Mivel a `.env` fájl biztonsági okokból nem szerepel a Git repository-ban, a projekt klónozása után az alábbi lépéseket kell követni:
+
+1. **Függőségek telepítése:**
+   A backend és frontend mappákban is futtasd le az `npm install` parancsot.
+2. **Környezeti változók beállítása:**
+   Hozz létre egy `.env` fájlt a backend gyökerében a következő tartalommal:
+   `DATABASE_URL="postgresql://FELHASZNALO:JELSZO@HOST:PORT/ADATBAZIS?schema=public"`
+3. **Adatbázis szinkronizálása:**
+   Futtasd a backend mappában: `npx prisma db push`
+4. **Alkalmazás indítása:**
+   - Backend: `node server.js`
+   - Frontend: `npm run dev`
