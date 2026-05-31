@@ -1,0 +1,16 @@
+# Node modulok
+node_modules/
+
+# Környezeti változók (SOHA NE KERÜLJÖN FEL GIT-RE!)
+.env
+
+# Build mappák (Frontend)
+dist/
+build/
+
+# Operációs rendszer fájlok
+.DS_Store
+Thumbs.db
+
+# Prisma generált kliens (opcionális, de élesítésnél úgyis újra generálódik)
+.prisma/

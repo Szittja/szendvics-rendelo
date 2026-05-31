@@ -1,0 +1,6 @@
+module.exports = {
+  datasource: {
+    url: "postgresql://admin:password123@localhost:5432/sandwich_db?schema=public",
+  },
+  schema: "prisma/schema.prisma",
+};
