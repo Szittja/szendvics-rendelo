@@ -166,7 +166,9 @@ function App() {
     btnPrimary: { background: '#3498db', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' },
     btnSuccess: { background: '#2ecc71', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' },
     btnDanger: { background: '#e74c3c', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' },
-    input: { padding: '12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '15px', width: '100%', boxSizing: 'border-box' }
+    input: { padding: '12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '15px', width: '100%', boxSizing: 'border-box' },
+    textMain: { color: '#1e293b' },
+    textMuted: { color: '#475569' } 
   }
 
   if (!user) {
@@ -229,7 +231,7 @@ function App() {
           /* ================= ADMIN MŰSZERFAL ================= */
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '30px' }}>
             <div>
-              <h2>📊 Eheti Összesített Beszerzés</h2>
+              <h2 style={styles.textMain}>📊 Eheti Összesített Beszerzés</h2>
               {adminSummary && (
                 <div style={{ ...styles.card, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                   <ul style={{ paddingLeft: '20px', fontSize: '16px', lineHeight: '2' }}>
@@ -241,7 +243,7 @@ function App() {
                 </div>
               )}
 
-              <h2 style={{ marginTop: '40px' }}>Részletes rendelési lista</h2>
+              <h2 style={{...styles.textMain, marginTop: '40px' }}>Részletes rendelési lista</h2>
               {adminOrders.map(order => (
                 <div key={order.id} style={{ ...styles.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
@@ -266,7 +268,7 @@ function App() {
 
             {/* MENÜ SZERKESZTÉSE */}
             <div>
-              <h2>🍔 Kínálat Módosítása</h2>
+              <h2 style={styles.textMain}>🍔 Kínálat Módosítása</h2>
               <div style={styles.card}>
                 <form onSubmit={handleAddSandwich} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '25px', paddingBottom: '25px', borderBottom: '1px solid #e2e8f0' }}>
                   <h4 style={{ margin: 0 }}>Új tétel hozzáadása</h4>
@@ -313,7 +315,7 @@ function App() {
             
             {/* BAL OSZLOP: KÍNÁLAT ÉS HISTÓRIA */}
             <div>
-              <h2>Elérhető finomságok</h2>
+              <h2 style={styles.textMain}>Elérhető finomságok</h2>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 {sandwiches.filter(sw => sw.isActive).map(sw => (
                   <div key={sw.id} style={{ ...styles.card, margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
@@ -336,7 +338,7 @@ function App() {
               </div>
 
               {/* SAJÁT RENDELÉSEK IDŐSZAKI BONTÁSBAN */}
-              <h2 style={{ marginTop: '50px' }}>Eddigi rendeléseim</h2>
+              <h2 style={{...styles.textMain, marginTop: '50px' }}>Eddigi rendeléseim</h2>
               {myOrders.length === 0 ? <p style={{ color: '#64748b' }}>Még nem adtál le rendelést ebben a rendszerben.</p> : (
                 <div>
                   {myOrders.map(order => {
@@ -395,7 +397,7 @@ function App() {
 
             {/* JOBB OSZLOP: KOSÁR (STICKY FIXED BOX) */}
             <div style={{ position: 'sticky', top: '110px' }}>
-              <h2>🛒 Kosár tartalma</h2>
+              <h2 style={styles.textMain}>🛒 Kosár tartalma</h2>
               <div style={styles.card}>
                 {cart.length === 0 ? (
                   <p style={{ color: '#64748b', textAlign: 'center', padding: '20px 0' }}>A kosarad még üres. Válassz a kínálatból!</p>
