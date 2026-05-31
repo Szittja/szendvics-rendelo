@@ -162,74 +162,62 @@ function App() {
 
   // STÍLUS OBJEKTUMOK A DESIGNHOZ
 const styles = {
-    // ALAP GOMBOK (ezeket valószínűleg nem kell bántanod, de ellenőrizd)
-    btnPrimary: { background: '#8b5cf6', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' },
-    btnSuccess: { background: '#22c55e', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' },
-    btnDanger: { background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' },
-    input: { padding: '12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '15px', width: '100%', boxSizing: 'border-box', background: '#334155', color: 'white' }, // A képed alapján sötét inputokat használsz
-    textMain: { color: '#1e293b' },
+    // MODERN GOMBOK (Színátmenetesek, szép árnyékkal)
+    btnPrimary: { background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '14px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 15px rgba(79, 70, 229, 0.3)' },
+    btnSuccess: { background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '14px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)' },
+    btnDanger: { background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '14px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)' },
     
-    // -----------------------------------------
-    // ÚJ / JAVÍTOTT STÍLUSOK INNENTŐL LEFELÉ
-    // -----------------------------------------
+    // MODERN MEZŐK (Világos téma, határozott körvonallal)
+    input: { padding: '14px 16px', borderRadius: '14px', border: '2px solid #e2e8f0', fontSize: '15px', width: '100%', boxSizing: 'border-box', background: '#f8fafc', color: '#0f172a', outline: 'none' }, 
+    
+    // TYPOGRÁFIA
+    textMain: { color: '#0f172a', fontWeight: '800', letterSpacing: '-0.5px' },
 
-    // 1. BEJELENTKEZÉS
+    // JAVÍTOTT BEJELENTKEZÉS (Szélesebb doboz, több tér)
     loginContainer: { 
-      background: 'white', padding: '40px 20px', borderRadius: '24px', 
-      boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
-      maxWidth: '400px', width: '90%', margin: '10vh auto', 
+      background: 'white', padding: '50px 40px', borderRadius: '24px', 
+      boxShadow: '0 20px 50px rgba(0,0,0,0.08)',
+      maxWidth: '450px', width: '90%', margin: '10vh auto', 
       display: 'flex', flexDirection: 'column', gap: '20px', boxSizing: 'border-box'
     },
     loginHeader: {
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '20px'
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '15px'
     },
 
-    // 2. FEJLÉC ÉS GLOBÁLIS KONTÉNER
-    pageContainer: { 
-      maxWidth: '1200px', margin: '0 auto', padding: '20px', boxSizing: 'border-box', width: '100%' 
-    },
-    headerWrap: { 
-      display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px'
-    },
+    // RESPONSIVE ELRENDEZÉS
+    pageContainer: { maxWidth: '1200px', margin: '0 auto', padding: '20px', boxSizing: 'border-box', width: '100%' },
+    headerWrap: { display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px' },
+    gridContainer: { display: 'flex', flexWrap: 'wrap', gap: '30px', alignItems: 'flex-start' },
+    gridColumnMain: { flex: '1 1 500px', minWidth: '280px', width: '100%', boxSizing: 'border-box' },
+    gridColumnSide: { flex: '1 1 300px', minWidth: '280px', width: '100%', boxSizing: 'border-box' },
 
-    // 3. RESPONSIVE ELRENDEZÉS (Ez teszi mobilon egymás alá a dolgokat)
-    gridContainer: { 
-      display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' 
-    },
-    gridColumnMain: { 
-      flex: '1 1 500px', // PC-n szélesebb, de mobilon lecsökken
-      minWidth: '280px', width: '100%', boxSizing: 'border-box'
-    },
-    gridColumnSide: { 
-      flex: '1 1 300px', // Ez a kosár / admin oldalsáv
-      minWidth: '280px', width: '100%', boxSizing: 'border-box'
-    },
-
-    // 4. KÁRTYÁK (kosár, szendvicsek dobozai)
+    // MODERN KÁRTYÁK (Lágyabb dobozok, kerekebb sarkok)
     card: { 
-      background: 'white', padding: '20px', borderRadius: '16px', 
-      boxShadow: '0 4px 15px rgba(0,0,0,0.05)', marginBottom: '15px', 
-      border: '1px solid #f8fafc', boxSizing: 'border-box', width: '100%'
+      background: 'white', padding: '25px', borderRadius: '24px', 
+      boxShadow: '0 10px 30px rgba(0,0,0,0.03)', marginBottom: '20px', 
+      border: '1px solid #f1f5f9', boxSizing: 'border-box', width: '100%'
     }
   }
 
   if (!user) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter", "Segoe UI", sans-serif' }}>
         <div style={styles.loginContainer}>
           
-          {/* Javított logó és cím elrendezés */}
           <div style={styles.loginHeader}>
-            {/* Ha van kép logód, ide tedd: <img src="logo.png" alt="Logo" style={{ height: '60px' }} /> */}
-            <h1 style={{ ...styles.textMain, margin: 0, textAlign: 'center' }}>Céges Szendvics</h1>
-            <p style={{ color: '#64748b', margin: 0 }}>Üdvözlünk! Jelentkezz be</p>
+            {/* LOGÓ: Ha van saját képed, töröld ki a <div style={{ fontSize... dobozt, és használd az alatta lévő img taget! */}
+            <div style={{ fontSize: '60px', marginBottom: '5px' }}>🥪</div>
+            {/* <img src="/a_te_logod.png" alt="Logo" style={{ height: '70px', marginBottom: '10px' }} /> */}
+            
+            <h1 style={{ ...styles.textMain, margin: 0, textAlign: 'center', fontSize: '28px' }}>Céges Szendvics</h1>
+            <p style={{ color: '#64748b', margin: 0, fontSize: '15px' }}>Üdvözlünk! Jelentkezz be a rendeléshez.</p>
           </div>
 
           <input type="email" placeholder="E-mail cím" value={email} onChange={e => setEmail(e.target.value)} style={styles.input} />
           <input type="password" placeholder="Jelszó" value={password} onChange={e => setPassword(e.target.value)} style={styles.input} />
-          <button onClick={handleLogin} style={{ ...styles.btnSuccess, padding: '14px', fontSize: '16px' }}>Bejelentkezés</button>
+          <button onClick={handleLogin} style={{ ...styles.btnSuccess, padding: '16px', fontSize: '16px', marginTop: '10px' }}>Bejelentkezés</button>
           
-          <p style={{ textAlign: 'center', fontSize: '13px', color: '#8b5cf6', cursor: 'pointer', marginTop: '10px' }}>
+          <p style={{ textAlign: 'center', fontSize: '14px', color: '#4f46e5', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' }}>
             Nincs még fiókod? Regisztrálj itt!
           </p>
         </div>
@@ -238,7 +226,7 @@ const styles = {
   }
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: 'system-ui', color: '#1e293b', padding: '0 0 40px 0' }}>
+    <div style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', minHeight: '100vh', fontFamily: '"Inter", "Segoe UI", Roboto, sans-serif', color: '#1e293b', padding: '0 0 50px 0' }}>
       
       {/* HEADER */}
       <header style={{ background: 'white', borderBottom: '1px solid #e2e8f0', padding: '15px 0' }}>
