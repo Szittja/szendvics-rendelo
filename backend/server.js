@@ -7,6 +7,8 @@ const { PrismaClient } = require('@prisma/client');
 // A Prisma automatikusan a .env fájlból olvassa ki az elérést!
 const prisma = new PrismaClient();
 
+
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -99,13 +101,54 @@ app.post('/api/admin/sandwiches', async (req, res) => {
 
 app.put('/api/admin/sandwiches/:id', async (req, res) => {
   try {
-    const { name, price } = req.body;
+    const sandwichId = parseInt(req.params.id);
+    const { name, price, isActive } = req.body;
+
+    // 1. Frissítjük a szendvicset
     const updated = await prisma.sandwich.update({
-      where: { id: parseInt(req.params.id) },
-      data: { name, price: parseInt(price) }
+      where: { id: sandwichId },
+      data: { name, price: parseInt(price), isActive: Boolean(isActive) }
     });
+
+    // 2. Ha inaktív lett, kivesszük a nyitott (eheti) rendelésekből
+    if (!isActive) {
+      const startOfWeek = getStartOfCurrentWeek();
+
+      // Kikeressük az eheti rendeléseket, amikben benne van ez a szendvics
+      const affectedItems = await prisma.orderItem.findMany({
+        where: {
+          sandwichId: sandwichId,
+          order: { createdAt: { gte: startOfWeek } }
+        }
+      });
+
+      for (let item of affectedItems) {
+        // Töröljük a tételt
+        await prisma.orderItem.delete({ where: { id: item.id } });
+
+        // Újraszámoljuk a rendelés összegét a megmaradt tételekből
+        const remainingItems = await prisma.orderItem.findMany({
+          where: { orderId: item.orderId },
+          include: { sandwich: true }
+        });
+
+        if (remainingItems.length === 0) {
+          // Ha kiürült a rendelés (csak ezt a szendvicset rendelte), töröljük az egészet
+          await prisma.order.delete({ where: { id: item.orderId } });
+        } else {
+          // Különben frissítjük az árat
+          const newTotal = remainingItems.reduce((sum, i) => sum + (i.sandwich.price * i.quantity), 0);
+          await prisma.order.update({
+            where: { id: item.orderId },
+            data: { totalPrice: newTotal }
+          });
+        }
+      }
+    }
     res.json(updated);
-  } catch (error) { res.status(500).json({ error: "Hiba a szendvics frissítésekor." }); }
+  } catch (error) { 
+    res.status(500).json({ error: "Hiba a szendvics frissítésekor." }); 
+  }
 });
 
 // --- RENDELÉSEK (SZIGORÚ HEI BONTÁSSAL) ---
