@@ -161,31 +161,76 @@ function App() {
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
   // STÍLUS OBJEKTUMOK A DESIGNHOZ
-  const styles = {
-    card: { background: 'white', padding: '20px', borderRadius: '16px', boxShadow: '0 4px 15px rgba(0,0,0,0.04)', marginBottom: '20px', border: '1px solid #f0f0f0' },
-    btnPrimary: { background: '#3498db', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' },
-    btnSuccess: { background: '#2ecc71', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' },
-    btnDanger: { background: '#e74c3c', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' },
-    input: { padding: '12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '15px', width: '100%', boxSizing: 'border-box' },
+const styles = {
+    // ALAP GOMBOK (ezeket valószínűleg nem kell bántanod, de ellenőrizd)
+    btnPrimary: { background: '#8b5cf6', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' },
+    btnSuccess: { background: '#22c55e', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' },
+    btnDanger: { background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' },
+    input: { padding: '12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '15px', width: '100%', boxSizing: 'border-box', background: '#334155', color: 'white' }, // A képed alapján sötét inputokat használsz
     textMain: { color: '#1e293b' },
-    textMuted: { color: '#475569' } 
+    
+    // -----------------------------------------
+    // ÚJ / JAVÍTOTT STÍLUSOK INNENTŐL LEFELÉ
+    // -----------------------------------------
+
+    // 1. BEJELENTKEZÉS
+    loginContainer: { 
+      background: 'white', padding: '40px 20px', borderRadius: '24px', 
+      boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+      maxWidth: '400px', width: '90%', margin: '10vh auto', 
+      display: 'flex', flexDirection: 'column', gap: '20px', boxSizing: 'border-box'
+    },
+    loginHeader: {
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', marginBottom: '20px'
+    },
+
+    // 2. FEJLÉC ÉS GLOBÁLIS KONTÉNER
+    pageContainer: { 
+      maxWidth: '1200px', margin: '0 auto', padding: '20px', boxSizing: 'border-box', width: '100%' 
+    },
+    headerWrap: { 
+      display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px'
+    },
+
+    // 3. RESPONSIVE ELRENDEZÉS (Ez teszi mobilon egymás alá a dolgokat)
+    gridContainer: { 
+      display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start' 
+    },
+    gridColumnMain: { 
+      flex: '1 1 500px', // PC-n szélesebb, de mobilon lecsökken
+      minWidth: '280px', width: '100%', boxSizing: 'border-box'
+    },
+    gridColumnSide: { 
+      flex: '1 1 300px', // Ez a kosár / admin oldalsáv
+      minWidth: '280px', width: '100%', boxSizing: 'border-box'
+    },
+
+    // 4. KÁRTYÁK (kosár, szendvicsek dobozai)
+    card: { 
+      background: 'white', padding: '20px', borderRadius: '16px', 
+      boxShadow: '0 4px 15px rgba(0,0,0,0.05)', marginBottom: '15px', 
+      border: '1px solid #f8fafc', boxSizing: 'border-box', width: '100%'
+    }
   }
 
   if (!user) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f4f7f6', fontFamily: 'system-ui' }}>
-        <div style={{ ...styles.card, width: '100%', maxWidth: '400px', padding: '35px' }}>
-          <h1 style={{ textAlign: 'center', color: '#2c3e50', margin: '0 0 10px 0' }}>🥪 Céges Szendvics</h1>
-          <h3 style={{ textAlign: 'center', color: '#7f8c8d', marginBottom: '30px', fontWeight: 'normal' }}>{isLoginView ? 'Üdvözlünk! Jelentkezz be' : 'Hozd létre a fiókod'}</h3>
-          {message && <div style={{ color: '#e74c3c', marginBottom: '20px', textAlign: 'center', fontWeight: 'bold' }}>{message}</div>}
-          <form onSubmit={isLoginView ? handleLogin : handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {!isLoginView && <input type="text" placeholder="Teljes neved" value={name} onChange={e => setName(e.target.value)} required style={styles.input} />}
-            <input type="email" placeholder="Céges email címed" value={email} onChange={e => setEmail(e.target.value)} required style={styles.input} />
-            <input type="password" placeholder="Jelszó" value={password} onChange={e => setPassword(e.target.value)} required style={styles.input} />
-            <button type="submit" style={{ ...styles.btnSuccess, padding: '14px', fontSize: '16px', marginTop: '10px' }}>{isLoginView ? 'Bejelentkezés' : 'Regisztráció'}</button>
-          </form>
-          <p style={{ textAlign: 'center', marginTop: '25px', color: '#3498db', cursor: 'pointer', fontSize: '14px' }} onClick={() => setIsLoginView(!isLoginView)}>
-            {isLoginView ? 'Nincs még fiókod? Regisztrálj itt!' : 'Már van fiókod? Lépj be!'}
+      <div style={{ minHeight: '100vh', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={styles.loginContainer}>
+          
+          {/* Javított logó és cím elrendezés */}
+          <div style={styles.loginHeader}>
+            {/* Ha van kép logód, ide tedd: <img src="logo.png" alt="Logo" style={{ height: '60px' }} /> */}
+            <h1 style={{ ...styles.textMain, margin: 0, textAlign: 'center' }}>Céges Szendvics</h1>
+            <p style={{ color: '#64748b', margin: 0 }}>Üdvözlünk! Jelentkezz be</p>
+          </div>
+
+          <input type="email" placeholder="E-mail cím" value={email} onChange={e => setEmail(e.target.value)} style={styles.input} />
+          <input type="password" placeholder="Jelszó" value={password} onChange={e => setPassword(e.target.value)} style={styles.input} />
+          <button onClick={handleLogin} style={{ ...styles.btnSuccess, padding: '14px', fontSize: '16px' }}>Bejelentkezés</button>
+          
+          <p style={{ textAlign: 'center', fontSize: '13px', color: '#8b5cf6', cursor: 'pointer', marginTop: '10px' }}>
+            Nincs még fiókod? Regisztrálj itt!
           </p>
         </div>
       </div>
@@ -196,18 +241,24 @@ function App() {
     <div style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: 'system-ui', color: '#1e293b', padding: '0 0 40px 0' }}>
       
       {/* HEADER */}
-      <header style={{ background: 'white', borderBottom: '1px solid #e2e8f0', padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div>
-          <h2 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px' }}>🥪 Szendvics Rendelő</h2>
-          <span style={{ color: '#64748b', fontSize: '14px' }}>Felhasználó: <b>{user.name}</b></span>
-        </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          {user.role === 'ADMIN' && (
-            <button onClick={() => setIsAdminView(!isAdminView)} style={{ ...styles.btnPrimary, background: '#8b5cf6' }}>
-              {isAdminView ? '⬅️ Rendelési Felület' : '📊 Admin Műszerfal'}
-            </button>
-          )}
-          <button onClick={handleLogout} style={styles.btnDanger}>Kilépés</button>
+      <header style={{ background: 'white', borderBottom: '1px solid #e2e8f0', padding: '15px 0' }}>
+        <div style={styles.pageContainer}>
+          <div style={styles.headerWrap}>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <div>
+                <h1 style={{ ...styles.textMain, margin: 0, fontSize: '24px' }}>🥪 Szendvics Rendelő</h1>
+                <span style={{ color: '#64748b', fontSize: '14px' }}>Felhasználó: <b>{user.email}</b></span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {isAdminView && user?.role === 'ADMIN' && <button style={styles.btnPrimary} onClick={() => setIsAdminView(false)}>Felhasználói Nézet</button>}
+              {!isAdminView && user?.role === 'ADMIN' && <button style={styles.btnPrimary} onClick={() => setIsAdminView(true)}>📊 Admin Műszerfal</button>}
+              <button style={styles.btnDanger} onClick={handleLogout}>Kilépés</button>
+            </div>
+
+          </div>
         </div>
       </header>
 
@@ -229,8 +280,8 @@ function App() {
 
         {isAdminView ? (
           /* ================= ADMIN MŰSZERFAL ================= */
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '30px' }}>
-            <div>
+          <div style={styles.gridContainer}>
+            <div style={styles.gridColumnMain}>
               <h2 style={styles.textMain}>📊 Eheti Összesített Beszerzés</h2>
               {adminSummary && (
                 <div style={{ ...styles.card, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
@@ -311,10 +362,10 @@ function App() {
           </div>
         ) : (
           /* ================= RENDELÉSI FELÜLET ================= */
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '35px', alignItems: 'start' }}>
+          <div style={styles.gridContainer}>
             
             {/* BAL OSZLOP: KÍNÁLAT ÉS HISTÓRIA */}
-            <div>
+            <div style={styles.gridColumnMain}>
               <h2 style={styles.textMain}>Elérhető finomságok</h2>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 {sandwiches.filter(sw => sw.isActive).map(sw => (
@@ -396,7 +447,7 @@ function App() {
             </div>
 
             {/* JOBB OSZLOP: KOSÁR (STICKY FIXED BOX) */}
-            <div style={{ position: 'sticky', top: '110px' }}>
+            <div style={{ ...styles.gridColumnSide, position: 'sticky', top: '110px' }}>
               <h2 style={styles.textMain}>🛒 Kosár tartalma</h2>
               <div style={styles.card}>
                 {cart.length === 0 ? (
