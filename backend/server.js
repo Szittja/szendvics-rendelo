@@ -115,6 +115,21 @@ app.put('/api/users/:id', async (req, res) => {
   }
 });
 
+// --- RENDELÉS VISSZAJELZÉS ---
+app.put('/api/orders/:id/feedback', async (req, res) => {
+  const { feedback } = req.body;
+  try {
+    await prisma.order.update({
+      where: { id: parseInt(req.params.id) },
+      data: { feedback }
+    });
+    res.json({ message: "Visszajelzés rögzítve!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Hiba a visszajelzés mentésekor." });
+  }
+});
+
 // --- SZENDVICS KEZELÉS ---
 app.get('/api/sandwiches', async (req, res) => {
   try {

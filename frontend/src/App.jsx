@@ -7,7 +7,15 @@ function App() {
     return savedUser ? JSON.parse(savedUser) : null;
   })
   
-  const [cart, setCart] = useState([])
+  const [cart, setCart] = useState(() => {
+    const savedCart = localStorage.getItem('sandwichCart');
+    return savedCart ? JSON.parse(savedCart) : [];
+  })
+
+  useEffect(() => {
+    localStorage.setItem('sandwichCart', JSON.stringify(cart));
+  }, [cart])
+
   const [quantities, setQuantities] = useState({})
   const [myOrders, setMyOrders] = useState([])
   const [hasUnpaid, setHasUnpaid] = useState(false)
@@ -45,16 +53,22 @@ function App() {
   const [editSandwichIsActive, setEditSandwichIsActive] = useState(true)
 
   const [isOrderingOpen, setIsOrderingOpen] = useState(false)
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
 
   useEffect(() => {
     const checkTimeWindow = () => {
-      //const now = new Date()
-      const now = new Date('2026-05-26T12:00:00Z') // TESZTELÉSHEZ FIX IDŐPONT! Élesben: const now = new Date();
+      // const now = new Date() // Élesben ez kell!
+      const now = new Date('2026-05-26T12:00:00Z') 
       const day = now.getDay()
       const hours = now.getHours()
-      // Kedd (2) egész nap, VAGY Szerda (3) 10:00 előtt
+      
+      // Rendelési ablak: Kedd (2) vagy Szerda (3) 10:00 előtt
       const isOpen = day === 2 || (day === 3 && hours < 10)
       setIsOrderingOpen(isOpen)
+
+      // Visszajelzési ablak: Szerda (3) 12:00 után VAGY Csütörtök (4) egész nap
+      const isFeedbackTime = (day === 3 && hours >= 12) || day === 4
+      setIsFeedbackOpen(isFeedbackTime)
     }
 
     checkTimeWindow()
@@ -152,6 +166,21 @@ function App() {
     if(window.confirm("Biztosan törlöd ezt a rendelést?")) {
       await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}`, { method: 'DELETE' })
       loadMyOrders(user.id)
+    }
+  }
+
+  const submitFeedback = async (orderId) => {
+    const text = window.prompt("Kérlek, írd le, mi nem volt megfelelő a rendeléssel kapcsolatban:");
+    if (!text || text.trim() === "") return; // Ha üres, nem csinálunk semmit
+
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/feedback`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ feedback: text })
+    });
+    
+    if (res.ok) {
+      alert("Köszönjük a visszajelzést, továbbítottuk az adminnak!");
+      loadMyOrders(user.id); // Újratöltjük a listát, hogy megjelenjen a szöveg
     }
   }
 
@@ -374,6 +403,13 @@ const styles = {
                     <ul style={{ marginTop: '10px', color: '#475569' }}>
                       {order.items.map(i => <li key={i.id}>{i.quantity}x {i.sandwich?.name}</li>)}
                     </ul>
+
+                    {/* ADMIN SZÁMÁRA MEGJELENŐ VISSZAJELZÉS */}
+                    {order.feedback && (
+                      <div style={{ marginTop: '10px', background: '#fee2e2', borderLeft: '4px solid #ef4444', padding: '8px 12px', borderRadius: '4px', fontSize: '14px', color: '#7f1d1d', maxWidth: '300px' }}>
+                        ⚠️ <b>Probléma jelentve:</b> {order.feedback}
+                      </div>
+                    )}
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '10px' }}>{order.totalPrice} Ft</div>
@@ -501,7 +537,7 @@ const styles = {
                           ))}
                         </div>
                         
-                        <div style={{ textAlign: 'right' }}>
+                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-end' }}>
                           <button 
                             onClick={() => cancelOrder(order.id)} 
                             disabled={!isOrderingOpen}
@@ -509,6 +545,21 @@ const styles = {
                           >
                             🗑️ Teljes rendelés visszavonása
                           </button>
+
+                          {/* VISSZAJELZÉS GOMB ÉS SZÖVEG */}
+                          {isFeedbackOpen && !order.feedback && (
+                            <button 
+                              onClick={() => submitFeedback(order.id)} 
+                              style={{ ...styles.btnPrimary, background: '#64748b', padding: '6px 12px', fontSize: '13px' }}
+                            >
+                              💬 Probléma bejelentése
+                            </button>
+                          )}
+                          {order.feedback && (
+                            <div style={{ background: '#fee2e2', color: '#991b1b', padding: '8px 12px', borderRadius: '8px', fontSize: '13px', textAlign: 'left', maxWidth: '100%' }}>
+                              <b>Visszajelzésed:</b> {order.feedback}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )

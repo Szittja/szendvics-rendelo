@@ -30,6 +30,7 @@ model Order {
   userId     Int
   totalPrice Int
   isPaid     Boolean     @default(false)
+  feedback    String?     // 👈 EZT ADD HOZZÁ (A kérdőjel jelzi, hogy opcionális)
   createdAt  DateTime    @default(now())
   user       User        @relation(fields: [userId], references: [id])
   items      OrderItem[]
