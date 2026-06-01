@@ -102,7 +102,7 @@ app.put('/api/users/:id', async (req, res) => {
     const updatedUser = await prisma.user.update({
       where: { id: parseInt(id) },
       data: updateData,
-      select: { id: true, name: true, email: true, role: true, mustChangePass: true } 
+      select: { id: true, name: true, email: true, role: true} 
     });
 
     res.json({ message: "Adataid sikeresen frissítve!", user: updatedUser });
