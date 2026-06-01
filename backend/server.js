@@ -303,6 +303,40 @@ app.get('/api/admin/orders', async (req, res) => {
   } catch (error) { res.status(500).json({ error: "Hiba az adatok lekérésekor." }); }
 });
 
+// --- ADMIN: FELHASZNÁLÓK LISTÁZÁSA ---
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, name: true, email: true, role: true },
+      orderBy: { id: 'asc' } // Létrehozás szerint sorbarendezve
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: "Hiba a felhasználók lekérésekor." });
+  }
+});
+
+// --- ADMIN: JOGOSULTSÁG MÓDOSÍTÁSA (CSAK NEKED) ---
+app.put('/api/admin/users/:id/role', async (req, res) => {
+  const { role, requesterEmail } = req.body;
+  
+  // Szigorú ellenőrzés: Csak te adhatsz admin jogot!
+  if (requesterEmail !== 'erdelyi.peter@compmarket.hu') {
+    return res.status(403).json({ error: "Nincs jogosultságod mások admin jogát módosítani!" });
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id: parseInt(req.params.id) },
+      data: { role }
+    });
+    res.json({ message: "Jogosultság sikeresen módosítva!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Hiba a jogosultság módosításakor." });
+  }
+});
+
 app.put('/api/admin/orders/:id/pay', async (req, res) => {
   try {
     const orderId = parseInt(req.params.id);

@@ -44,6 +44,7 @@ function App() {
   const [isAdminView, setIsAdminView] = useState(false)
   const [adminOrders, setAdminOrders] = useState([])
   const [adminSummary, setAdminSummary] = useState(null)
+  const [adminUsers, setAdminUsers] = useState([])
 
   const [newSandwichName, setNewSandwichName] = useState('')
   const [newSandwichPrice, setNewSandwichPrice] = useState('')
@@ -99,12 +100,29 @@ function App() {
     setAdminOrders(await resOrders.json())
     const resSummary = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/summary`)
     setAdminSummary(await resSummary.json())
+    const resUsers = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users`)
+    setAdminUsers(await resUsers.json())
   }
 
   useEffect(() => {
     if (isAdminView) loadAdminData()
     if (user && !isAdminView) loadMyOrders(user.id)
   }, [isAdminView, user])
+
+  const handleRoleChange = async (userId, newRole) => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}/role`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: newRole, requesterEmail: user.email }) // Elküldjük, hogy ki kéri a módosítást
+    });
+    
+    if (res.ok) {
+      loadAdminData(); // Újratöltjük a listát, hogy látszódjon a változás
+    } else {
+      const data = await res.json();
+      alert(data.error); // Ha más próbálja nyomkodni, hibaüzenetet kap
+    }
+  }
 
   const handleAddSandwich = async (e) => {
     e.preventDefault()
@@ -474,6 +492,55 @@ const styles = {
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+            {/* ================= ÚJ SZEKCIÓ: FELHASZNÁLÓK KEZELÉSE ================= */}
+            <div style={{ width: '100%', marginTop: '40px' }}>
+              <h2 style={styles.textMain}>👥 Regisztrált Felhasználók</h2>
+              <div style={{ ...styles.card, overflowX: 'auto' }}>
+                <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b' }}>
+                      <th style={{ padding: '12px' }}>Név</th>
+                      <th style={{ padding: '12px' }}>E-mail cím</th>
+                      <th style={{ padding: '12px' }}>Szerepkör</th>
+                      <th style={{ padding: '12px', textAlign: 'right' }}>Műveletek</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminUsers.map(u => (
+                      <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '12px', fontWeight: 'bold' }}>{u.name || '-'}</td>
+                        <td style={{ padding: '12px', color: '#475569' }}>{u.email}</td>
+                        <td style={{ padding: '12px' }}>
+                          <span style={{ 
+                            padding: '6px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', 
+                            background: u.role === 'ADMIN' ? '#dbeafe' : '#f1f5f9', 
+                            color: u.role === 'ADMIN' ? '#1e40af' : '#64748b' 
+                          }}>
+                            {u.role === 'ADMIN' ? 'Adminisztrátor' : 'Felhasználó'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px', textAlign: 'right' }}>
+                          {/* CSAK ERDÉLYI PÉTER LÁTJA A GOMBOT, ÉS SAJÁT MAGÁTÓL NEM TUDJA ELVENNI A JOGOT */}
+                          {user.email === 'erdelyi.peter@compmarket.hu' && u.email !== 'erdelyi.peter@compmarket.hu' && (
+                            <button 
+                              onClick={() => handleRoleChange(u.id, u.role === 'ADMIN' ? 'USER' : 'ADMIN')}
+                              style={{ 
+                                ...styles.btnPrimary, 
+                                padding: '8px 14px', fontSize: '13px', 
+                                background: u.role === 'ADMIN' ? '#94a3b8' : '#3b82f6',
+                                boxShadow: 'none'
+                              }}
+                            >
+                              {u.role === 'ADMIN' ? '❌ Jog elvétele' : '👑 Admin jog adása'}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
