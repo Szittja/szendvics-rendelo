@@ -86,6 +86,35 @@ app.post('/api/login', async (req, res) => {
   } catch (error) { res.status(500).json({ error: "Hiba a bejelentkezés során." }); }
 });
 
+// --- PROFIL FRISSÍTÉSE ---
+app.put('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, email, password } = req.body;
+  
+  try {
+    const updateData = { name, email };
+    
+    // Csak akkor frissítjük a jelszót, ha a felhasználó írt be újat
+    if (password && password.trim() !== '') {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: parseInt(id) },
+      data: updateData,
+      select: { id: true, name: true, email: true, role: true, mustChangePass: true } 
+    });
+
+    res.json({ message: "Adataid sikeresen frissítve!", user: updatedUser });
+  } catch (error) {
+    console.error("Hiba a profil frissítésekor:", error);
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: "Ez az e-mail cím már foglalt!" });
+    }
+    res.status(500).json({ error: "Belső szerverhiba történt." });
+  }
+});
+
 // --- SZENDVICS KEZELÉS ---
 app.get('/api/sandwiches', async (req, res) => {
   try {

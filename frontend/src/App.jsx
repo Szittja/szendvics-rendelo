@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react'
 
 function App() {
   const [sandwiches, setSandwiches] = useState([])
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('sandwichUser');
+    return savedUser ? JSON.parse(savedUser) : null;
+  })
   
   const [cart, setCart] = useState([])
   const [quantities, setQuantities] = useState({})
@@ -10,6 +13,20 @@ function App() {
   const [hasUnpaid, setHasUnpaid] = useState(false)
   const [orderMessage, setOrderMessage] = useState('')
   const [message, setMessage] = useState('')
+
+  const [isProfileView, setIsProfileView] = useState(false)
+  const [editProfileName, setEditProfileName] = useState('')
+  const [editProfileEmail, setEditProfileEmail] = useState('')
+  const [editProfilePassword, setEditProfilePassword] = useState('')
+  const [profileMessage, setProfileMessage] = useState('')
+
+  useEffect(() => {
+    if (user) {
+      setEditProfileName(user.name || '')
+      setEditProfileEmail(user.email || '')
+      setEditProfilePassword('') // Jelszót direkt üresen hagyjuk
+    }
+  }, [user, isProfileView])
   
   const [isLoginView, setIsLoginView] = useState(true)
   const [email, setEmail] = useState('')
@@ -145,7 +162,13 @@ function App() {
       body: JSON.stringify({ email, password })
     })
     const data = await res.json()
-    if (res.ok) { setUser(data); setMessage('') } else { setMessage("❌ " + data.error) }
+    if (res.ok) {
+       setUser(data);
+       localStorage.setItem('sandwichUser', JSON.stringify(data)); 
+       setMessage(''); 
+      } else { 
+        setMessage("❌ " + data.error) 
+      }
   }
 
   const handleRegister = async (e) => {
@@ -157,7 +180,25 @@ function App() {
     if (res.ok) { setMessage("✅ Sikeres regisztráció! Jelentkezz be."); setIsLoginView(true) }
   }
 
-  const handleLogout = () => { setUser(null); setCart([]); setIsAdminView(false); setHasUnpaid(false); }
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault()
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${user.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: editProfileName, email: editProfileEmail, password: editProfilePassword })
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setProfileMessage('✅ ' + data.message)
+      setUser(data.user) // Azonnali frissítés a felületen
+      localStorage.setItem('sandwichUser', JSON.stringify(data.user)) // A localStorage is frissül
+      setEditProfilePassword('')
+    } else {
+      setProfileMessage('❌ ' + data.error)
+    }
+  }
+
+  const handleLogout = () => { setUser(null); setCart([]); setIsAdminView(false); setHasUnpaid(false); localStorage.removeItem('sandwichUser');}
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
   // STÍLUS OBJEKTUMOK A DESIGNHOZ
@@ -233,23 +274,25 @@ const styles = {
         <div style={styles.pageContainer}>
           <div style={styles.headerWrap}>
             
-            {/* BAL OLDAL: Cím és Felhasználó neve */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
               <h1 style={{ ...styles.textMain, margin: 0, fontSize: '24px' }}>🥪 Szendvics Rendelő</h1>
               
-              {/* Modern felhasználónév kijelző */}
+              {/* KATTINTHATÓ PROFIL GOMB */}
               {user && (
-                <div style={{ background: '#f1f5f9', padding: '6px 14px', borderRadius: '20px', fontSize: '14px', color: '#475569', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button 
+                  onClick={() => { setIsProfileView(true); setIsAdminView(false); }}
+                  style={{ background: isProfileView ? '#e2e8f0' : '#f1f5f9', border: 'none', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', color: '#475569', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', transition: '0.2s' }}
+                  title="Profilom szerkesztése"
+                >
                   👤 {user.name ? user.name : user.email}
-                </div>
+                </button>
               )}
             </div>
 
-            {/* JOBB OLDAL: Gombok (ez marad a régi) */}
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {isAdminView && user?.role === 'ADMIN' && <button style={styles.btnPrimary} onClick={() => setIsAdminView(false)}>Felhasználói Nézet</button>}
-              {!isAdminView && user?.role === 'ADMIN' && <button style={styles.btnPrimary} onClick={() => setIsAdminView(true)}>📊 Admin Műszerfal</button>}
-              <button style={styles.btnDanger} onClick={handleLogout}>Kilépés</button>
+              {isAdminView && user?.role === 'ADMIN' && <button style={styles.btnPrimary} onClick={() => { setIsAdminView(false); setIsProfileView(false); }}>Felhasználói Nézet</button>}
+              {!isAdminView && user?.role === 'ADMIN' && <button style={styles.btnPrimary} onClick={() => { setIsAdminView(true); setIsProfileView(false); }}>📊 Admin Műszerfal</button>}
+              <button style={styles.btnDanger} onClick={() => { handleLogout(); setIsProfileView(false); }}>Kilépés</button>
             </div>
 
           </div>
@@ -272,7 +315,41 @@ const styles = {
           </div>
         )}
 
-        {isAdminView ? (
+        {isProfileView ? (
+          /* ================= PROFIL BEÁLLÍTÁSOK ================= */
+          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <h2 style={styles.textMain}>⚙️ Profil Beállítások</h2>
+            <div style={styles.card}>
+              <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#475569' }}>Név</label>
+                  <input type="text" value={editProfileName} onChange={e => setEditProfileName(e.target.value)} style={{ ...styles.input, background: 'white' }} placeholder="Pl. Kiss Péter" />
+                </div>
+                
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#475569' }}>E-mail cím</label>
+                  <input type="email" value={editProfileEmail} onChange={e => setEditProfileEmail(e.target.value)} style={{ ...styles.input, background: 'white' }} required />
+                </div>
+                
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#475569' }}>Új jelszó (Opcionális)</label>
+                  <input type="password" value={editProfilePassword} onChange={e => setEditProfilePassword(e.target.value)} style={{ ...styles.input, background: 'white' }} placeholder="Csak akkor töltsd ki, ha módosítani akarod" />
+                </div>
+                
+                <button type="submit" style={{ ...styles.btnSuccess, marginTop: '10px', padding: '14px' }}>Mentés</button>
+
+                {profileMessage && (
+                  <div style={{ marginTop: '10px', padding: '12px', borderRadius: '8px', textAlign: 'center', fontWeight: 'bold', background: profileMessage.startsWith('✅') ? '#d1fae5' : '#fee2e2', color: profileMessage.startsWith('✅') ? '#065f46' : '#991b1b' }}>
+                    {profileMessage}
+                  </div>
+                )}
+              </form>
+            </div>
+            <button onClick={() => setIsProfileView(false)} style={{ ...styles.btnPrimary, background: '#64748b', boxShadow: 'none' }}>⬅️ Vissza a rendeléshez</button>
+          </div>
+
+        ) : isAdminView ? (
           /* ================= ADMIN MŰSZERFAL ================= */
           <div style={styles.gridContainer}>
             <div style={styles.gridColumnMain}>
