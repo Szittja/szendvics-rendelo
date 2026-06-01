@@ -58,7 +58,7 @@ function App() {
   useEffect(() => {
     const checkTimeWindow = () => {
       // const now = new Date() // Élesben ez kell!
-      const now = new Date('2026-05-26T13:00:00Z') 
+      const now = new Date('2026-05-27T13:00:00Z') 
       const day = now.getDay()
       const hours = now.getHours()
       
