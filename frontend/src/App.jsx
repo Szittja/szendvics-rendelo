@@ -126,6 +126,16 @@ function App() {
     if (!isAdminView && user) loadMyOrders(user.id) // Frissítjük a user rendeléseit, hátha eltűnt belőle valami
   }
 
+  const handleQuantityChange = (sandwichId, value) => {
+    // A beírt értéket számmá alakítjuk. Ha valaki kitörölné, alapértelmezetten 1-et adunk neki.
+    const numericValue = parseInt(value) || 1;
+    
+    setQuantities(prevQuantities => ({
+      ...prevQuantities,
+      [sandwichId]: numericValue
+    }));
+  };
+
   const addToCart = (sandwich) => {
     setOrderMessage('')
     const qty = quantities[sandwich.id] || 1
