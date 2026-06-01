@@ -113,7 +113,7 @@ function App() {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}/role`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: newRole, requesterEmail: user.email }) // Elküldjük, hogy ki kéri a módosítást
+      body: JSON.stringify({ role: newRole, requesterId: user.id }) // Elküldjük, hogy ki kéri a módosítást
     });
     
     if (res.ok) {
@@ -522,8 +522,7 @@ const styles = {
                           </span>
                         </td>
                         <td style={{ padding: '12px', textAlign: 'right' }}>
-                          {/* CSAK ERDÉLYI PÉTER LÁTJA A GOMBOT, ÉS SAJÁT MAGÁTÓL NEM TUDJA ELVENNI A JOGOT */}
-                          {user.email === 'erdelyi.peter@compmarket.hu' && u.email !== 'erdelyi.peter@compmarket.hu' && (
+                          {user.id !== u.id && u.email?.toLowerCase() !== 'erdelyi.peter@compmarket.hu' && (
                             <button 
                               onClick={() => handleRoleChange(u.id, u.role === 'ADMIN' ? 'USER' : 'ADMIN')}
                               style={{ 

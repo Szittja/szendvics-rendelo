@@ -316,23 +316,44 @@ app.get('/api/admin/users', async (req, res) => {
   }
 });
 
-// --- ADMIN: JOGOSULTSÁG MÓDOSÍTÁSA (CSAK NEKED) ---
+// --- ADMIN: JOGOSULTSÁG MÓDOSÍTÁSA ---
 app.put('/api/admin/users/:id/role', async (req, res) => {
-  const { role, requesterEmail } = req.body;
+  const { role, requesterId } = req.body;
   
-  // Szigorú ellenőrzés: Csak te adhatsz admin jogot!
-  if (requesterEmail !== 'erdelyi.peter@compmarket.hu') {
-    return res.status(403).json({ error: "Nincs jogosultságod mások admin jogát módosítani!" });
+  if (!requesterId) {
+    return res.status(400).json({ error: "Hiányzó adminisztrátori azonosító!" });
   }
 
   try {
+    const requester = await prisma.user.findUnique({ where: { id: parseInt(requesterId) } });
+    
+    if (!requester || requester.role !== 'ADMIN') {
+      return res.status(403).json({ error: "Csak adminisztrátorok módosíthatnak jogosultságot!" });
+    }
+
+    if (requester.id === parseInt(req.params.id) && role === 'USER') {
+      return res.status(403).json({ error: "Saját magadtól nem veheted el az admin jogot!" });
+    }
+
+    // 🔒 SUPERADMIN VÉDELEM: Lekérdezzük a célpontot
+    const targetUser = await prisma.user.findUnique({ where: { id: parseInt(req.params.id) } });
+    if (!targetUser) {
+      return res.status(404).json({ error: "A módosítandó felhasználó nem található!" });
+    }
+
+    // Ha a célpont te vagy, és valaki USER-ré akar tenni, a szerver blokkolja!
+    if (targetUser.email === 'erdelyi.peter@compmarket.hu' && role === 'USER') {
+      return res.status(403).json({ error: "A Főadminisztrátor (Superadmin) jogosultsága nem vonható meg!" });
+    }
+
     await prisma.user.update({
       where: { id: parseInt(req.params.id) },
       data: { role }
     });
+
     res.json({ message: "Jogosultság sikeresen módosítva!" });
   } catch (error) {
-    console.error(error);
+    console.error("Hiba a jogosultság módosításakor:", error);
     res.status(500).json({ error: "Hiba a jogosultság módosításakor." });
   }
 });

@@ -19,3 +19,6 @@ Thumbs.db
 tesztAdatok.js
 test-data.js
 seed.js
+.vscode/
+Helyi db.session.sql
+
