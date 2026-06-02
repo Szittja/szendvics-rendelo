@@ -26,18 +26,6 @@ const getStartOfCurrentWeek = () => {
   return startOfWeek;
 };
 
-// --- SEGÉDFÜGGVÉNY: Az aktuális hét hétfő 00:00 kiszámítása ---
-const getThisMonday = () => {
-  const now = new Date();
-  // Alapból a vasárnap a 0. nap. Átalakítjuk úgy, hogy a hétfő legyen az 1., vasárnap a 7.
-  const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay(); 
-  
-  const thisMonday = new Date(now);
-  thisMonday.setDate(now.getDate() - (dayOfWeek - 1)); // Visszaugrunk hétfőre
-  thisMonday.setHours(0, 0, 0, 0); // Beállítjuk éjfélre (00:00:00)
-  
-  return thisMonday;
-};
 
 const isOrderTimeValid = () => {
   const now = new Date();
@@ -167,7 +155,7 @@ app.put('/api/orders/:id/feedback', checkFeedbackWindow, async (req, res) => {
     }
 
     // 2. 🔒 A VÉDELEM: Csak eheti rendelésre lehet panaszt tenni
-    if (new Date(order.createdAt) < getThisMonday()) {
+    if (new Date(order.createdAt) < getStartOfCurrentWeek()) {
       return res.status(403).json({ error: "Csak az eheti rendelésekre lehet panaszt tenni!" });
     }
 
@@ -321,7 +309,7 @@ app.put('/api/order-items/:id', async (req, res) => {
     
     if (!item) return res.status(404).json({ error: "A tétel nem található!" });
 
-    if (new Date(item.order.createdAt) < getThisMonday()) {
+    if (new Date(item.order.createdAt) < getStartOfCurrentWeek()) {
       return res.status(403).json({ error: "Korábbi hetek rendeléseit már nem lehet módosítani!" });
     }
 
@@ -356,7 +344,7 @@ app.delete('/api/orders/:id', async (req, res) => {
 
     if (!order) return res.status(404).json({ error: "A rendelés nem található!" });
 
-    if (new Date(order.createdAt) < getThisMonday()) {
+    if (new Date(order.createdAt) < getStartOfCurrentWeek()) {
       return res.status(403).json({ error: "Korábbi hetek rendeléseit már nem lehet törölni!" });
     }
 

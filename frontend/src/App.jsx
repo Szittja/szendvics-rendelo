@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import './App.css'
 
 function App() {
   const [sandwiches, setSandwiches] = useState([])
@@ -48,7 +49,6 @@ function App() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
-  const [authMessage, setAuthMessage] = useState('');
 
   const [isAdminView, setIsAdminView] = useState(false)
   const [adminOrders, setAdminOrders] = useState([])
@@ -586,83 +586,79 @@ const styles = {
                 </div>
               )}
 
+              {adminMessage && (
+                <div style={{ 
+                  position: 'fixed', // Ettől fog lebegni a képernyőn
+                  top: '20px', 
+                  right: '20px', 
+                  zIndex: 9999, // Hogy biztosan minden felett legyen
+                  background: adminMessage.includes('❌') ? '#fee2e2' : '#10b981', 
+                  color: adminMessage.includes('❌') ? '#991b1b' : 'white', 
+                  padding: '16px 24px', 
+                  borderRadius: '12px', 
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.15)', // Szép, modern árnyék
+                  fontWeight: 'bold',
+                  fontSize: '15px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  {adminMessage.includes('❌') ? '❌' : '✅'} {adminMessage.replace('❌ ', '').replace('✅ ', '')}
+                </div>
+              )}
+
               <h2 style={{...styles.textMain, marginTop: '40px' }}>Részletes rendelési lista</h2>
               {adminOrders.map(order => (
-                <div key={order.id} style={{ ...styles.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
+                <div key={order.id} style={{ ...styles.card, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px' }}>
+                  
+                  {/* BAL OLDAL: Adatok (mobilon kitölti a szélességet, így a gombok aláugranak) */}
+                  <div style={{ flex: '1 1 250px', minWidth: '200px' }}>
                     <h3 style={{ margin: '0 0 5px 0', color: '#334155' }}>{order.user?.name}</h3>
                     <span style={{ fontSize: '13px', color: '#64748b' }}>{new Date(order.createdAt).toLocaleDateString('hu-HU')}</span>
-                    <ul style={{ marginTop: '10px', color: '#475569' }}>
-                      {order.items.map(i => <li key={i.id}>{i.quantity}x {i.sandwich?.name}</li>)}
+                    <ul style={{ marginTop: '10px', paddingLeft: '20px', color: '#475569' }}>
+                      {order.items.map(i => <li key={i.id} style={{ marginBottom: '4px' }}>{i.quantity}x {i.sandwich?.name}</li>)}
                     </ul>
 
-                    {adminMessage && (
-                      <div style={{ 
-                        background: adminMessage.includes('❌') ? '#fee2e2' : '#d1fae5', 
-                        color: adminMessage.includes('❌') ? '#991b1b' : '#065f46', 
-                        padding: '10px 15px', 
-                        borderRadius: '8px', 
-                        marginBottom: '15px',
-                        textAlign: 'center',
-                        fontWeight: '500',
-                        border: adminMessage.includes('❌') ? '1px solid #f87171' : '1px solid #34d399'
-                      }}>
-                        {adminMessage}
-                      </div>
-                    )}
-
-                    {/* ADMIN SZÁMÁRA MEGJELENŐ VISSZAJELZÉS */}
                     {order.feedback && (
-                      <div style={{ marginTop: '10px', background: '#fee2e2', borderLeft: '4px solid #ef4444', padding: '8px 12px', borderRadius: '4px', fontSize: '14px', color: '#7f1d1d', maxWidth: '300px' }}>
+                      <div style={{ marginTop: '10px', background: '#fee2e2', borderLeft: '4px solid #ef4444', padding: '8px 12px', borderRadius: '4px', fontSize: '14px', color: '#7f1d1d', maxWidth: '100%' }}>
                         ⚠️ <b>Probléma jelentve:</b> {order.feedback}
                       </div>
                     )}
                   </div>
-                  
-                  {/* JOBB OLDALI RÉSZ (Ár és Akció gombok) */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+
+                  {/* JOBB OLDAL: Ár és Akció gombok (mobilon szintén igazodik) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px', flex: '1 1 auto', minWidth: '150px' }}>
+                    
+                    {/* Végösszeg */}
                     <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b' }}>
                       {order.totalPrice} Ft
                     </div>
                   
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    {/* Gombok sora */}
+                    <div style={{ display: 'flex', gap: '8px', width: '100%', justifyContent: 'flex-end' }}>
+                      
+                      {/* Fizetve / Tartozik gomb */}
                       <button 
                         onClick={async () => {
                           await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${order.id}/pay`, { method: 'PUT' });
                           loadAdminData();
                         }} 
-                        style={{ 
-                          ...styles.btnPrimary, 
-                          background: order.isPaid ? '#10b981' : '#f59e0b', 
-                          width: '120px',
-                          padding: '8px 0',
-                          fontSize: '13px',
-                          margin: 0
-                        }}
+                        style={{ ...styles.btnPrimary, background: order.isPaid ? '#10b981' : '#f59e0b', padding: '8px 12px', fontSize: '13px', margin: 0, boxShadow: 'none', flex: '1 1 auto', maxWidth: '120px' }}
                       >
                         {order.isPaid ? '✅ Fizetve' : '⏳ Tartozik'}
                       </button>
                   
+                      {/* Törlés gomb */}
                       <button 
                         onClick={() => handleAdminDeleteOrder(order.id)}
-                        style={{ 
-                          background: '#ef4444', 
-                          color: 'white', 
-                          border: 'none', 
-                          padding: '8px 12px', 
-                          borderRadius: '6px', 
-                          cursor: 'pointer', 
-                          fontSize: '13px',
-                          fontWeight: 'bold',
-                          display: 'flex',
-                          alignItems: 'center',
-                          margin: 0
-                        }}
+                        style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', margin: 0 }}
                       >
                         🗑️ Törlés
                       </button>
+                  
                     </div>
                   </div>
+
                 </div>
               ))}
             </div>
@@ -762,39 +758,106 @@ const styles = {
           </div>
         ) : (
           /* ================= RENDELÉSI FELÜLET ================= */
-          <div style={styles.gridContainer}>
-            
-            {/* BAL OSZLOP: KÍNÁLAT ÉS HISTÓRIA */}
-            <div style={styles.gridColumnMain}>
+          <div className="user-layout">
+            {/* 1. SZEKCIÓ: KÍNÁLAT */}
+            <div className="section-kinalat">
               <h2 style={styles.textMain}>Elérhető finomságok</h2>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-                gap: '20px',
-                width: '100%' 
-              }}>
+              
+              {/* Ez az a rács, amit előbb mobilbaráttá tettünk! */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', width: '100%' }}>
+                
                 {sandwiches.filter(sw => sw.isActive).map(sw => (
                   <div key={sw.id} style={{ ...styles.card, margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
+                    
+                    {/* Szendvics neve és ára */}
                     <div>
                       <h3 style={{ margin: '0 0 5px 0', fontSize: '18px' }}>{sw.name}</h3>
                       <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '16px' }}>{sw.price} Ft</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '15px', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
-                      <input type="number" min="1" disabled={!isOrderingOpen} value={quantities[sw.id] || 1} onChange={e => handleQuantityChange(sw.id, e.target.value)} style={{ width: '50px', padding: '6px', textAlign: 'center', borderRadius: '6px', border: '1px solid #cbd5e1', ...(!isOrderingOpen ? { background: '#f1f5f9', cursor: 'not-allowed' } : {}) }} />
+                    
+                   {/* 🔒 MODERN, PRÉMIUM BEVITELI MEZŐ ÉS KOSÁRBA GOMB */}
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '15px', borderTop: '1px solid #f1f5f9', paddingTop: '15px', justifyContent: 'center', alignItems: 'center' }}>
+          
+                      <input 
+                        type="number" 
+                        min="1" 
+                        disabled={!isOrderingOpen} 
+                        value={quantities[sw.id] === 0 || quantities[sw.id] === '' ? '' : (quantities[sw.id] || 1)} 
+                        onChange={e => {
+                          const val = e.target.value;
+                          setQuantities(prev => ({
+                            ...prev,
+                            [sw.id]: val === '' ? '' : parseInt(val)
+                          }));
+                        }}
+                        onBlur={e => {
+                          const val = parseInt(e.target.value);
+                          if (!val || val < 1) {
+                            setQuantities(prev => ({
+                              ...prev,
+                              [sw.id]: 1
+                            }));
+                          }
+                        }}
+                        style={{ 
+                          width: '60px', 
+                          height: '48px', 
+                          padding: '0', 
+                          textAlign: 'center', 
+                          borderRadius: '12px', 
+                          border: 'none', 
+                          background: '#f1f5f9', 
+                          fontWeight: '900', 
+                          fontSize: '18px', 
+                          color: '#1e293b', 
+                          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)', 
+                          boxSizing: 'border-box', 
+                          ...(!isOrderingOpen ? { background: '#e2e8f0', color: '#94a3b8', cursor: 'not-allowed' } : {}) 
+                        }} 
+                      />
+
                       <button 
-                        onClick={() => addToCart(sw)} 
+                        onClick={() => {
+                          const qty = parseInt(quantities[sw.id]) || 1;
+                          addToCart({ ...sw, id: sw.id }); 
+                        }} 
                         disabled={!isOrderingOpen}
-                        style={{ ...styles.btnPrimary, flex: 1, background: '#f59e0b', ...(!isOrderingOpen ? disabledStyle : {}) }}
+                        style={{ 
+                          ...styles.btnPrimary, 
+                          // flex: 1, <-- Ezt töröltük, így már nem húzza szét magát a gomb!
+                          height: '48px', 
+                          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', 
+                          padding: '0 24px', // Kicsit szélesebb belső margó a kényelmes kattintásért
+                          borderRadius: '12px', 
+                          display: 'flex', 
+                          justifyContent: 'center', 
+                          alignItems: 'center',
+                          gap: '8px', 
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          color: 'white',
+                          boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)', 
+                          ...(!isOrderingOpen ? disabledStyle : {}) 
+                        }}
                       >
+                        {/* 🛒 TISZTA FEHÉR SVG KOSÁR IKON */}
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="9" cy="21" r="1"></circle>
+                          <circle cx="20" cy="21" r="1"></circle>
+                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                        </svg>
                         Kosárba
                       </button>
                     </div>
+
                   </div>
                 ))}
               </div>
-
-              {/* SAJÁT RENDELÉSEK IDŐSZAKI BONTÁSBAN */}
-              <h2 style={{...styles.textMain, marginTop: '50px' }}>Eddigi rendeléseim</h2>
+            </div>
+            {/* SAJÁT RENDELÉSEK IDŐSZAKI BONTÁSBAN */}
+            {/* 3. SZEKCIÓ: RENDELÉSEK (A CSS fogja legalulra tolni mobilon) */}
+            <div className="section-rendelesek">
+              <h2 style={{...styles.textMain, marginTop: '0' }}>Eddigi rendeléseim</h2>
               {myOrders.length === 0 ? <p style={{ color: '#64748b' }}>Még nem adtál le rendelést ebben a rendszerben.</p> : (
                 <div>
                   {myOrders.map(order => {
@@ -896,8 +959,8 @@ const styles = {
               )}
             </div>
 
-            {/* JOBB OSZLOP: KOSÁR (STICKY FIXED BOX) */}
-            <div style={{ ...styles.gridColumnSide, position: 'sticky', top: '110px' }}>
+            {/* 2. SZEKCIÓ: KOSÁR (A CSS fogja jobbra tenni, mobilon meg középre) */}
+            <div className="section-kosar">
               <h2 style={styles.textMain}>🛒 Kosár tartalma</h2>
               <div style={styles.card}>
                 {cart.length === 0 ? (

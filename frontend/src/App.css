@@ -182,3 +182,50 @@
     border-right-color: var(--border);
   }
 }
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+/* --- MOBIL NÉZET (Alapértelmezett) --- */
+.user-layout {
+  display: flex !important;
+  flex-direction: column;
+  gap: 30px;
+  width: 100%;
+}
+
+.section-kinalat { order: 1; width: 100%; }
+.section-kosar { order: 2; width: 100%; }
+.section-rendelesek { order: 3; width: 100%; }
+
+/* --- ASZTALI NÉZET (900px felett bekapcsol a rács) --- */
+@media (min-width: 900px) {
+  .user-layout {
+    display: grid !important; /* A legfontosabb sor! */
+    grid-template-columns: 2fr 1fr; 
+    align-items: start; 
+  }
+  
+  .section-kinalat {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  
+  .section-rendelesek {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  
+  .section-kosar {
+    grid-column: 2;
+    grid-row: 1 / span 2; 
+    position: sticky;
+    top: 110px;
+  }
+}
