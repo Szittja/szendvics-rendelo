@@ -26,6 +26,19 @@ const getStartOfCurrentWeek = () => {
   return startOfWeek;
 };
 
+// --- SEGÉDFÜGGVÉNY: Az aktuális hét hétfő 00:00 kiszámítása ---
+const getThisMonday = () => {
+  const now = new Date();
+  // Alapból a vasárnap a 0. nap. Átalakítjuk úgy, hogy a hétfő legyen az 1., vasárnap a 7.
+  const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay(); 
+  
+  const thisMonday = new Date(now);
+  thisMonday.setDate(now.getDate() - (dayOfWeek - 1)); // Visszaugrunk hétfőre
+  thisMonday.setHours(0, 0, 0, 0); // Beállítjuk éjfélre (00:00:00)
+  
+  return thisMonday;
+};
+
 const isOrderTimeValid = () => {
   const now = new Date();
   //const now = new Date('2026-05-26T12:00:00Z'); // TESZTELÉSHEZ FIX IDŐPONT! Élesben: const now = new Date();
@@ -141,15 +154,33 @@ app.put('/api/users/:id', async (req, res) => {
 // --- RENDELÉS VISSZAJELZÉS ---
 app.put('/api/orders/:id/feedback', checkFeedbackWindow, async (req, res) => {
   try {
+    const orderId = parseInt(req.params.id);
     const { feedback } = req.body;
-    await prisma.order.update({
-      where: { id: parseInt(req.params.id) },
-      data: { feedback }
+
+    // 1. Lekérjük a rendelést
+    const order = await prisma.order.findUnique({ 
+      where: { id: orderId } 
     });
-    res.json({ message: "Visszajelzés rögzítve!" });
+
+    if (!order) {
+      return res.status(404).json({ error: "A rendelés nem található!" });
+    }
+
+    // 2. 🔒 A VÉDELEM: Csak eheti rendelésre lehet panaszt tenni
+    if (new Date(order.createdAt) < getThisMonday()) {
+      return res.status(403).json({ error: "Csak az eheti rendelésekre lehet panaszt tenni!" });
+    }
+
+    // 3. Mentjük a visszajelzést a Prismával
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { feedback } // Ide az a mezőnév kerül, ahogy a sémádban elnevezted a panaszt
+    });
+    
+    res.json({ message: "Visszajelzés sikeresen mentve!" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Hiba a visszajelzés mentésekor." });
+    console.error("Hiba a visszajelzésnél:", error);
+    res.status(500).json({ error: "Szerverhiba történt mentés közben." });
   }
 });
 
@@ -283,8 +314,16 @@ app.put('/api/order-items/:id', async (req, res) => {
     const itemId = parseInt(req.params.id);
     const { newQuantity } = req.body;
 
-    const item = await prisma.orderItem.findUnique({ where: { id: itemId }, include: { sandwich: true } });
+    const item = await prisma.orderItem.findUnique({ 
+      where: { id: itemId }, 
+      include: { sandwich: true, order: true } 
+    });
+    
     if (!item) return res.status(404).json({ error: "A tétel nem található!" });
+
+    if (new Date(item.order.createdAt) < getThisMonday()) {
+      return res.status(403).json({ error: "Korábbi hetek rendeléseit már nem lehet módosítani!" });
+    }
 
     if (newQuantity <= 0) {
       await prisma.orderItem.delete({ where: { id: itemId } });
@@ -292,7 +331,7 @@ app.put('/api/order-items/:id', async (req, res) => {
       await prisma.orderItem.update({ where: { id: itemId }, data: { quantity: newQuantity } });
     }
 
-    // Újraszámoljuk a rendelés végösszegét
+    // Újraszámoljuk a rendelés végösszegét...
     const remainingItems = await prisma.orderItem.findMany({ where: { orderId: item.orderId }, include: { sandwich: true } });
     if (remainingItems.length === 0) {
       await prisma.order.delete({ where: { id: item.orderId } });
@@ -300,6 +339,7 @@ app.put('/api/order-items/:id', async (req, res) => {
       const newTotal = remainingItems.reduce((sum, i) => sum + (i.sandwich.price * i.quantity), 0);
       await prisma.order.update({ where: { id: item.orderId }, data: { totalPrice: newTotal } });
     }
+    
     res.json({ message: "Sikeresen frissítve!" });
   } catch (error) { res.status(500).json({ error: "Hiba a tétel frissítésekor." }); }
 });
@@ -309,8 +349,20 @@ app.delete('/api/orders/:id', async (req, res) => {
   try {
     if (!isOrderTimeValid()) return res.status(403).json({ error: "Törölni csak szerda 10:00-ig lehet!" });
     const orderId = parseInt(req.params.id);
+
+    const order = await prisma.order.findUnique({ 
+      where: { id: orderId } 
+    });
+
+    if (!order) return res.status(404).json({ error: "A rendelés nem található!" });
+
+    if (new Date(order.createdAt) < getThisMonday()) {
+      return res.status(403).json({ error: "Korábbi hetek rendeléseit már nem lehet törölni!" });
+    }
+
     await prisma.orderItem.deleteMany({ where: { orderId } });
     await prisma.order.delete({ where: { id: orderId } });
+    
     res.json({ message: "Rendelés törölve!" });
   } catch (error) { res.status(500).json({ error: "Hiba a törlésnél." }); }
 });
