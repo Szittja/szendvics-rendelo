@@ -71,19 +71,19 @@ const checkFeedbackWindow = (req, res, next) => {
   next();
 };
 
-// AUTOMATIKUS TISZTÍTÁS: 3 hétnél régebbi, fizetett rendelések törlése
+// AUTOMATIKUS TISZTÍTÁS: 1 hétnél régebbi, fizetett rendelések törlése
 const cleanupOldOrders = async () => {
   try {
-    const threeWeeksAgo = new Date();
-    threeWeeksAgo.setDate(threeWeeksAgo.getDate() - 21);
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeeksAgo.getDate() - 7);
     
     // Először a kapcsolódó tételeket töröljük az adatbázis kényszerek miatt
     await prisma.orderItem.deleteMany({
-      where: { order: { createdAt: { lt: threeWeeksAgo }, isPaid: true } }
+      where: { order: { createdAt: { lt: oneWeekAgo }, isPaid: true } }
     });
     
     const deleted = await prisma.order.deleteMany({
-      where: { createdAt: { lt: threeWeeksAgo }, isPaid: true }
+      where: { createdAt: { lt: oneWeekAgo }, isPaid: true }
     });
     
     if (deleted.count > 0) {
@@ -376,6 +376,26 @@ app.get('/api/admin/orders', async (req, res) => {
     });
     res.json(orders);
   } catch (error) { res.status(500).json({ error: "Hiba az adatok lekérésekor." }); }
+});
+
+// --- ADMIN: Bármilyen rendelés azonnali törlése ---
+app.delete('/api/admin/orders/:id', async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+
+    await prisma.orderItem.deleteMany({
+      where: { orderId: orderId }
+    });
+
+    await prisma.order.delete({
+      where: { id: orderId }
+    });
+    
+    res.json({ message: "Rendelés sikeresen törölve az admin által!" });
+  } catch (error) {
+    console.error("Hiba az admin törlésnél:", error);
+    res.status(500).json({ error: "Szerverhiba a törlés során." });
+  }
 });
 
 // --- ADMIN: FELHASZNÁLÓK LISTÁZÁSA ---
