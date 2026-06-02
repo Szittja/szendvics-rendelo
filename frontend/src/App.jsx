@@ -35,6 +35,14 @@ function App() {
       setEditProfilePassword('') // Jelszót direkt üresen hagyjuk
     }
   }, [user, isProfileView])
+
+  const [expandedSandwiches, setExpandedSandwiches] = useState({});
+  const toggleSandwichDetails = (sandwichId) => {
+    setExpandedSandwiches(prev => ({
+      ...prev,
+      [sandwichId]: !prev[sandwichId] // Ha nyitva volt, becsukja, ha csukva, kinyitja
+    }));
+  };
   
   const [isLoginView, setIsLoginView] = useState(true)
   const [email, setEmail] = useState('')
@@ -123,6 +131,36 @@ function App() {
       alert(data.error); // Ha más próbálja nyomkodni, hibaüzenetet kap
     }
   }
+
+  const getDetailedSummary = () => {
+  const summary = {};
+  
+  if (!adminOrders) return summary;
+
+  adminOrders.forEach(order => {
+    const userName = order.user?.name || 'Ismeretlen';
+    
+    order.items.forEach(item => {
+      const sandwichName = item.sandwich?.name || 'Ismeretlen szendvics';
+      
+      // Ha még nincs ilyen szendvics, létrehozzuk
+      if (!summary[sandwichName]) {
+        summary[sandwichName] = { total: 0, buyers: {} };
+      }
+      
+      // Hozzáadjuk a darabszámot a végösszeghez
+      summary[sandwichName].total += item.quantity;
+      
+      // Hozzáadjuk a vásárlóhoz a darabszámot
+      if (!summary[sandwichName].buyers[userName]) {
+        summary[sandwichName].buyers[userName] = 0;
+      }
+      summary[sandwichName].buyers[userName] += item.quantity;
+    });
+  });
+  
+  return summary;
+};  
 
   const handleAddSandwich = async (e) => {
     e.preventDefault()
@@ -459,9 +497,28 @@ const styles = {
               <h2 style={styles.textMain}>📊 Eheti Összesített Beszerzés</h2>
               {adminSummary && (
                 <div style={{ ...styles.card, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
-                  <ul style={{ paddingLeft: '20px', fontSize: '16px', lineHeight: '2' }}>
-                    {Object.entries(adminSummary.itemsSummary).map(([name, count]) => (
-                      <li key={name}><b>{count} db</b> - {name}</li>
+                  <ul style={{ paddingLeft: '0', fontSize: '16px', lineHeight: '2', listStyle: 'none' }}>
+                    {Object.entries(getDetailedSummary()).map(([sandwichName, data]) => (
+                      <li key={sandwichName} style={{ marginBottom: '10px', borderBottom: '1px solid #bfdbfe', paddingBottom: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span><b>{data.total} db</b> - {sandwichName}</span>
+                          <button
+                            onClick={() => setExpandedSandwiches(prev => ({ ...prev, [sandwichName]: !prev[sandwichName] }))}
+                            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
+                          >
+                            {expandedSandwiches[sandwichName] ? '🔼 Bezár' : '🔽 Kik rendelték?'}
+                          </button>
+                        </div>
+                        
+                        {/* LENYÍLÓ RÉSZ */}
+                        {expandedSandwiches[sandwichName] && (
+                          <ul style={{ paddingLeft: '20px', marginTop: '5px', fontSize: '14px', color: '#475569', listStyleType: 'disc' }}>
+                            {Object.entries(data.buyers).map(([buyer, qty]) => (
+                              <li key={buyer}><b>{buyer}:</b> {qty} db</li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
                     ))}
                   </ul>
                   <h3 style={{ margin: '20px 0 0 0', color: '#1e40af' }}>Mindösszesen: {adminSummary.totalQuantity} db szendvics | Összérték: {adminSummary.totalPrice} Ft</h3>
@@ -509,7 +566,7 @@ const styles = {
                   <button type="submit" style={styles.btnSuccess}>+ Mentés a kínálatba</button>
                 </form>
 
-                <h4 style={{ marginBottom: '15px' }}>Jelenlegi szendvicsek</h4>
+                <h4 style={{ marginBottom: '15px' }}>Jelenlegi Finomságok</h4>
                 {sandwiches.map(sw => (
                   <div key={sw.id} style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '10px', background: sw.isActive ? 'white' : '#f1f5f9', opacity: sw.isActive ? 1 : 0.7 }}>
                     {editingSandwichId === sw.id ? (
