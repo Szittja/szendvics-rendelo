@@ -247,6 +247,30 @@ function App() {
     })
     if (res.ok) { setMessage("✅ Sikeres regisztráció! Jelentkezz be."); setIsLoginView(true) }
   }
+  
+  const handleRegister = async () => {
+    if (!name || !email || !password) {
+      alert("Kérlek, tölts ki minden mezőt!");
+      return;
+    }
+    
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }) 
+    });
+
+    if (res.ok) {
+      setMessage("✅ Sikeres regisztráció! Jelentkezz be.");
+      setIsLoginView(true); // Visszavált a bejelentkező űrlapra
+      // Opcionális: Kiürítjük a mezőket a sikeres regisztráció után
+      setName('');
+      setPassword('');
+    } else {
+      const data = await res.json();
+      alert("Hiba: " + data.error);
+    }
+  };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault()
@@ -321,14 +345,34 @@ const styles = {
             <h1 style={{ ...styles.textMain, margin: 0, textAlign: 'center', fontSize: '28px' }}>Céges Szendvics</h1>
             <p style={{ color: '#64748b', margin: 0, fontSize: '15px' }}>Üdvözlünk! Jelentkezz be a rendeléshez.</p>
           </div>
-
-          <input type="email" placeholder="E-mail cím" value={email} onChange={e => setEmail(e.target.value)} style={styles.input} />
-          <input type="password" placeholder="Jelszó" value={password} onChange={e => setPassword(e.target.value)} style={styles.input} />
-          <button onClick={handleLogin} style={{ ...styles.btnSuccess, padding: '16px', fontSize: '16px', marginTop: '10px' }}>Bejelentkezés</button>
-          
-          <p style={{ textAlign: 'center', fontSize: '14px', color: '#4f46e5', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' }}>
-            Nincs még fiókod? Regisztrálj itt!
-          </p>
+          {isLoginView ? (
+              <>
+                {/* --- BEJELENTKEZÉS NÉZET --- */}
+                <input type="email" placeholder="E-mail cím" value={email} onChange={e => setEmail(e.target.value)} style={styles.input} />
+                <input type="password" placeholder="Jelszó" value={password} onChange={e => setPassword(e.target.value)} style={styles.input} />
+                <button onClick={handleLogin} style={{ ...styles.btnSuccess, width: '100%', padding: '16px', fontSize: '16px', marginTop: '10px' }}>
+                  Bejelentkezés
+                </button>
+                
+                <p onClick={() => setIsLoginView(false)} style={{ textAlign: 'center', fontSize: '14px', color: '#4f46e5', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>
+                  Nincs még fiókod? Regisztrálj itt!
+                </p>
+              </>
+            ) : (
+              <>
+                {/* --- REGISZTRÁCIÓ NÉZET --- */}
+                <input type="text" placeholder="Teljes neved (pl. Teszt Elek)" value={name} onChange={e => setName(e.target.value)} style={styles.input} />
+                <input type="email" placeholder="E-mail cím" value={email} onChange={e => setEmail(e.target.value)} style={styles.input} />
+                <input type="password" placeholder="Jelszó" value={password} onChange={e => setPassword(e.target.value)} style={styles.input} />
+                <button onClick={handleRegister} style={{ ...styles.btnSuccess, width: '100%', padding: '16px', fontSize: '16px', marginTop: '10px' }}>
+                  Regisztráció
+                </button>
+                
+                <p onClick={() => setIsLoginView(true)} style={{ textAlign: 'center', fontSize: '14px', color: '#4f46e5', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>
+                  Már van fiókod? Jelentkezz be!
+                </p>
+              </>
+            )}
         </div>
       </div>
     )
