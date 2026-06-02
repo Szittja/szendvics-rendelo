@@ -761,6 +761,7 @@ const styles = {
               </div>
             </div>
           </div>
+         </div>   
         ) : (
           /* ================= RENDELÉSI FELÜLET ================= */
           <div style={styles.gridContainer}>
