@@ -48,6 +48,7 @@ function App() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [authMessage, setAuthMessage] = useState('');
 
   const [isAdminView, setIsAdminView] = useState(false)
   const [adminOrders, setAdminOrders] = useState([])
@@ -421,8 +422,22 @@ const styles = {
           {isLoginView ? (
               <>
                 {/* --- BEJELENTKEZÉS NÉZET --- */}
-                <input type="email" placeholder="E-mail cím" value={email} onChange={e => setEmail(e.target.value)} style={styles.input} />
-                <input type="password" placeholder="Jelszó" value={password} onChange={e => setPassword(e.target.value)} style={styles.input} />
+                {message && (
+                  <div style={{ 
+                    background: message.includes('❌') ? '#fee2e2' : '#d1fae5', 
+                    color: message.includes('❌') ? '#991b1b' : '#065f46', 
+                    padding: '10px', 
+                    borderRadius: '5px', 
+                    marginBottom: '15px', 
+                    textAlign: 'center', 
+                    fontSize: '14px', 
+                    border: message.includes('❌') ? '1px solid #f87171' : '1px solid #34d399' 
+                  }}>
+                    {message}
+                  </div>
+                )}
+                <input type="email" placeholder="E-mail cím" value={email} onChange={e => setEmail(e.target.value); setMessage('');} style={styles.input} />
+                <input type="password" placeholder="Jelszó" value={password} onChange={e => setPassword(e.target.value); setMessage('');} style={styles.input} />
                 <button onClick={handleLogin} style={{ ...styles.btnSuccess, width: '100%', padding: '16px', fontSize: '16px', marginTop: '10px' }}>
                   Bejelentkezés
                 </button>
@@ -601,34 +616,57 @@ const styles = {
                       </div>
                     )}
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '10px' }}>{order.totalPrice} Ft</div>
-                    <button onClick={async () => {
-                      await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${order.id}/pay`, { method: 'PUT' });
-                      loadAdminData();
-                    }} style={{ ...styles.btnPrimary, background: order.isPaid ? '#10b981' : '#f59e0b', width: '120px' }}>
-                      {order.isPaid ? '✅ Fizetve' : '⏳ Tartozik'}
-                    </button>
-                  </div>
-                  <button 
-                    onClick={() => handleAdminDeleteOrder(order.id)}
-                    style={{ 
-                      background: '#ef4444', 
-                      color: 'white', 
-                      border: 'none', 
-                      padding: '8px 12px', 
-                      borderRadius: '6px', 
-                      cursor: 'pointer', 
-                      fontSize: '13px',
-                      fontWeight: 'bold',
-                      marginLeft: '15px' // Hogy ne tapadjon rá a szövegre
-                    }}
-                  >
-                    🗑️ Törlés
-                  </button>
-                </div>
-              ))}
-            </div>
+                  {/* JOBB OLDALI RÉSZ (Ár és Akció gombok) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+                      
+                      {/* Végösszeg */}
+                      <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b' }}>
+                        {order.totalPrice} Ft
+                      </div>
+                    
+                      {/* Gombok egy tökéletesen igazított sorban */}
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        
+                        {/* Fizetve / Tartozik gomb */}
+                        <button 
+                          onClick={async () => {
+                            await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${order.id}/pay`, { method: 'PUT' });
+                            loadAdminData();
+                          }} 
+                          style={{ 
+                            ...styles.btnPrimary, 
+                            background: order.isPaid ? '#10b981' : '#f59e0b', 
+                            width: '120px',
+                            padding: '8px 0',
+                            fontSize: '13px',
+                            margin: 0 // Biztosítjuk, hogy ne legyen felesleges elcsúszás
+                          }}
+                        >
+                          {order.isPaid ? '✅ Fizetve' : '⏳ Tartozik'}
+                        </button>
+                    
+                        {/* Törlés gomb */}
+                        <button 
+                          onClick={() => handleAdminDeleteOrder(order.id)}
+                          style={{ 
+                            background: '#ef4444', 
+                            color: 'white', 
+                            border: 'none', 
+                            padding: '8px 12px', 
+                            borderRadius: '6px', 
+                            cursor: 'pointer', 
+                            fontSize: '13px',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            alignItems: 'center',
+                            margin: 0
+                          }}
+                        >
+                          🗑️ Törlés
+                        </button>
+                    
+                      </div>
+                    </div>
 
             {/* MENÜ SZERKESZTÉSE */}
             <div>
