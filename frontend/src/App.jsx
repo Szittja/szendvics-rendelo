@@ -667,6 +667,8 @@ const styles = {
                     
                       </div>
                     </div>
+                  </div>
+            ))}
 
             {/* MENÜ SZERKESZTÉSE */}
             <div>
