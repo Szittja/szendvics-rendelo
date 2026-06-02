@@ -75,7 +75,7 @@ const checkFeedbackWindow = (req, res, next) => {
 const cleanupOldOrders = async () => {
   try {
     const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeeksAgo.getDate() - 7);
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     
     // Először a kapcsolódó tételeket töröljük az adatbázis kényszerek miatt
     await prisma.orderItem.deleteMany({
