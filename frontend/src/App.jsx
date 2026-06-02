@@ -238,15 +238,6 @@ function App() {
         setMessage("❌ " + data.error) 
       }
   }
-
-  const handleRegister = async (e) => {
-    e.preventDefault()
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/register`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password })
-    })
-    if (res.ok) { setMessage("✅ Sikeres regisztráció! Jelentkezz be."); setIsLoginView(true) }
-  }
   
   const handleRegister = async () => {
     if (!name || !email || !password) {
