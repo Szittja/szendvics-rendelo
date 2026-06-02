@@ -27,12 +27,35 @@ const getStartOfCurrentWeek = () => {
 };
 
 const isOrderTimeValid = () => {
-  //const now = new Date();
-  const now = new Date('2026-05-26T12:00:00Z'); // TESZTELÉSHEZ FIX IDŐPONT! Élesben: const now = new Date();
+  const now = new Date();
+  //const now = new Date('2026-05-26T12:00:00Z'); // TESZTELÉSHEZ FIX IDŐPONT! Élesben: const now = new Date();
   const day = now.getDay();
   const hours = now.getHours();
   // Kedd (2) egész nap VAGY Szerda (3) és 10 óra előtt
   return day === 2 || (day === 3 && hours < 10);
+};
+
+// --- MIDDLEWARE: Értékelési időablak ellenőrzése ---
+const checkFeedbackWindow = (req, res, next) => {
+  const now = new Date();
+  const day = now.getDay(); 
+  const hours = now.getHours();
+
+  // Csak szerda (3) 12:00 után, VAGY csütörtökön (4) egész nap
+  const isFeedbackOpen = (day === 3 && hours >= 12) || (day === 4);
+
+  // Ha tesztelni akarod az értékelést (hétfőn/kedden), ideiglenesen cseréld le erre:
+  // const isFeedbackOpen = true; 
+
+  if (!isFeedbackOpen) {
+    // Ha rossz az időpont, a middleware visszadobja a hibát, és leállítja a folyamatot
+    return res.status(403).json({ 
+      error: "Panaszt és értékelést kizárólag szerda 12:00 és csütörtök éjfél között lehet beküldeni!" 
+    });
+  }
+
+  // Ha minden rendben, a next() utasítás átengedi a kérést a tényleges végpontnak!
+  next();
 };
 
 // AUTOMATIKUS TISZTÍTÁS: 3 hétnél régebbi, fizetett rendelések törlése
@@ -116,9 +139,9 @@ app.put('/api/users/:id', async (req, res) => {
 });
 
 // --- RENDELÉS VISSZAJELZÉS ---
-app.put('/api/orders/:id/feedback', async (req, res) => {
-  const { feedback } = req.body;
+app.put('/api/orders/:id/feedback', checkFeedbackWindow, async (req, res) => {
   try {
+    const { feedback } = req.body;
     await prisma.order.update({
       where: { id: parseInt(req.params.id) },
       data: { feedback }

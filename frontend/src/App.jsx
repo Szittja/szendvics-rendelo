@@ -58,7 +58,7 @@ function App() {
 
   useEffect(() => {
     const checkTimeWindow = () => {
-      // const now = new Date() // Élesben ez kell!
+      //const now = new Date() // Élesben ez kell!
       const now = new Date('2026-05-26T13:00:00Z') 
       const day = now.getDay()
       const hours = now.getHours()
@@ -198,17 +198,28 @@ function App() {
   }
 
   const submitFeedback = async (orderId) => {
+    // 1. Bekérjük a szöveget (Maradhat a prompt, ha gyors megoldást akarsz)
     const text = window.prompt("Kérlek, írd le, mi nem volt megfelelő a rendeléssel kapcsolatban:");
-    if (!text || text.trim() === "") return; // Ha üres, nem csinálunk semmit
+    if (!text || text.trim() === "") return;
 
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/feedback`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ feedback: text })
-    });
-    
-    if (res.ok) {
-      alert("Köszönjük a visszajelzést, továbbítottuk az adminnak!");
-      loadMyOrders(user.id); // Újratöltjük a listát, hogy megjelenjen a szöveg
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/feedback`, {
+        method: 'PUT', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedback: text })
+      });
+      
+      if (res.ok) {
+        setOrderMessage("✅ Köszönjük a visszajelzést, továbbítottuk az adminnak!");      
+        loadMyOrders(user.id); 
+      } else {
+        const data = await res.json();
+        setOrderMessage("❌ " + data.error);
+              }
+    } catch (error) {
+      // VÉDŐHÁLÓ: Ha például elmegy a net, és a szervert sem éri el
+      console.error("Hálózati hiba:", error);
+      setOrderMessage("❌ Hálózati hiba! Kérlek, ellenőrizd az internetkapcsolatot.");
     }
   }
 
