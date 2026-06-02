@@ -64,6 +64,18 @@ function App() {
   const [isOrderingOpen, setIsOrderingOpen] = useState(false)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
 
+  // --- SEGÉDFÜGGVÉNY: Az aktuális hét hétfő 00:00 kiszámítása ---
+  const getThisMonday = () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay(); 
+    
+    const thisMonday = new Date(now);
+    thisMonday.setDate(now.getDate() - (dayOfWeek - 1));
+    thisMonday.setHours(0, 0, 0, 0);
+    
+    return thisMonday;
+  };
+
   useEffect(() => {
     const checkTimeWindow = () => {
       const now = new Date() // Élesben ez kell!
@@ -680,8 +692,14 @@ const styles = {
                 <div>
                   {myOrders.map(order => {
                     const orderDate = new Date(order.createdAt);
+                    
+                    // 🔒 ÚJ VÁLTOZÓ: Kiszámoljuk, eheti-e a rendelés
+                    const isThisWeek = orderDate >= getThisMonday();
+                  
                     return (
                       <div key={order.id} style={{ ...styles.card, borderLeft: order.isPaid ? '5px solid #10b981' : '5px solid #f59e0b' }}>
+                        
+                        {/* FEJLÉC: Ez mindig látszik (Dátum, Ár, Fizetve) */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px', marginBottom: '15px' }}>
                           <div>
                             <span style={{ fontSize: '13px', color: '#64748b' }}>Leadási idő: {orderDate.toLocaleString('hu-HU')}</span> <br/>
@@ -689,59 +707,83 @@ const styles = {
                           </div>
                           <span style={{ fontSize: '20px', fontWeight: 'bold' }}>{order.totalPrice} Ft</span>
                         </div>
-                        
-                        {/* ÉLŐ MÓDOSÍTÓ GOMBOK A MÁR LEADOTT RENDELÉSEN */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px' }}>
-                          {order.items.map(item => (
-                            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '10px 15px', borderRadius: '8px' }}>
-                              <span>{item.sandwich?.name}</span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  
+                        {/* FELTÉTELES MEGJELENÍTÉS A DÁTUM ALAPJÁN */}
+                        {isThisWeek ? (
+                          <>
+                            {/* --- 1. ESET: EHETI RENDELÉS (AKTÍV GOMBOKKAL) --- */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px' }}>
+                              {order.items.map(item => (
+                                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '10px 15px', borderRadius: '8px' }}>
+                                  <span>{item.sandwich?.name}</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <button 
+                                      onClick={() => updateOrderItem(item.id, item.quantity - 1)} 
+                                      disabled={!isOrderingOpen} 
+                                      style={{ background: '#ef4444', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '5px', fontWeight: 'bold', cursor: isOrderingOpen ? 'pointer' : 'not-allowed' }}
+                                    >-</button>
+                                    <span style={{ fontWeight: 'bold', width: '20px', textAlign: 'center' }}>{item.quantity} db</span>
+                                    <button 
+                                      onClick={() => updateOrderItem(item.id, item.quantity + 1)} 
+                                      disabled={!isOrderingOpen} 
+                                      style={{ background: '#10b981', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '5px', fontWeight: 'bold', cursor: isOrderingOpen ? 'pointer' : 'not-allowed' }}
+                                    >+</button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                  
+                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-end' }}>
+                              <button 
+                                onClick={() => cancelOrder(order.id)} 
+                                disabled={!isOrderingOpen} 
+                                style={{ ...styles.btnDanger, padding: '6px 12px', fontSize: '13px', ...(!isOrderingOpen ? disabledStyle : {}) }}
+                              >
+                                🗑️ Teljes rendelés visszavonása
+                              </button>
+                  
+                              {/* VISSZAJELZÉS GOMB ÉS SZÖVEG */}
+                              {isFeedbackOpen && !order.feedback && (
                                 <button 
-                                  onClick={() => updateOrderItem(item.id, item.quantity - 1)} 
-                                  disabled={!isOrderingOpen}
-                                  style={{ background: '#ef4444', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '5px', fontWeight: 'bold', cursor: isOrderingOpen ? 'pointer' : 'not-allowed', opacity: isOrderingOpen ? 1 : 0.5 }}
+                                  onClick={() => submitFeedback(order.id)} 
+                                  style={{ ...styles.btnPrimary, background: '#64748b', padding: '6px 12px', fontSize: '13px' }}
                                 >
-                                  -
+                                  💬 Probléma bejelentése
                                 </button>
-                                <span style={{ fontWeight: 'bold', width: '20px', textAlign: 'center' }}>{item.quantity} db</span>
-                                <button 
-                                  onClick={() => updateOrderItem(item.id, item.quantity + 1)} 
-                                  disabled={!isOrderingOpen}
-                                  style={{ background: '#10b981', color: 'white', border: 'none', width: '28px', height: '28px', borderRadius: '5px', fontWeight: 'bold', cursor: isOrderingOpen ? 'pointer' : 'not-allowed', opacity: isOrderingOpen ? 1 : 0.5 }}
-                                >
-                                  +
-                                </button>
+                              )}
+                              {order.feedback && (
+                                <div style={{ background: '#fee2e2', color: '#991b1b', padding: '8px 12px', borderRadius: '8px', fontSize: '13px', textAlign: 'left', maxWidth: '100%' }}>
+                                  <b>Visszajelzésed:</b> {order.feedback}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {/* --- 2. ESET: RÉGI RENDELÉS (CSAK OLVASHATÓ) --- */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px' }}>
+                              {order.items.map(item => (
+                                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '10px 15px', borderRadius: '8px' }}>
+                                  <span style={{ color: '#475569' }}>{item.sandwich?.name}</span>
+                                  <span style={{ fontWeight: 'bold', color: '#475569' }}>{item.quantity} db</span>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            <div style={{ marginTop: '10px', padding: '10px', background: '#f1f5f9', borderRadius: '8px', color: '#64748b', fontSize: '13px', fontStyle: 'italic', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                              🔒 Ez a rendelés egy korábbi héthez tartozik, így már lezárult.
+                            </div>
+                  
+                            {/* Ha írt panaszt a régi rendeléshez, azt továbbra is láthatja */}
+                            {order.feedback && (
+                              <div style={{ background: '#fee2e2', color: '#991b1b', padding: '8px 12px', borderRadius: '8px', fontSize: '13px', textAlign: 'left', maxWidth: '100%', marginTop: '10px' }}>
+                                <b>Visszajelzésed:</b> {order.feedback}
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                        
-                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-end' }}>
-                          <button 
-                            onClick={() => cancelOrder(order.id)} 
-                            disabled={!isOrderingOpen}
-                            style={{ ...styles.btnDanger, padding: '6px 12px', fontSize: '13px', ...(!isOrderingOpen ? disabledStyle : {}) }}
-                          >
-                            🗑️ Teljes rendelés visszavonása
-                          </button>
-
-                          {/* VISSZAJELZÉS GOMB ÉS SZÖVEG */}
-                          {isFeedbackOpen && !order.feedback && (
-                            <button 
-                              onClick={() => submitFeedback(order.id)} 
-                              style={{ ...styles.btnPrimary, background: '#64748b', padding: '6px 12px', fontSize: '13px' }}
-                            >
-                              💬 Probléma bejelentése
-                            </button>
-                          )}
-                          {order.feedback && (
-                            <div style={{ background: '#fee2e2', color: '#991b1b', padding: '8px 12px', borderRadius: '8px', fontSize: '13px', textAlign: 'left', maxWidth: '100%' }}>
-                              <b>Visszajelzésed:</b> {order.feedback}
-                            </div>
-                          )}
-                        </div>
+                            )}
+                          </>
+                        )}
                       </div>
-                    )
+                    );
                   })}
                 </div>
               )}
