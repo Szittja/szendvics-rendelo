@@ -145,34 +145,36 @@ function App() {
   }
 
   const getDetailedSummary = () => {
-  const summary = {};
-  
-  if (!adminOrders) return summary;
-
-  adminOrders.forEach(order => {
-    const userName = order.user?.name || 'Ismeretlen';
+    const summary = {};
     
-    order.items.forEach(item => {
-      const sandwichName = item.sandwich?.name || 'Ismeretlen szendvics';
-      
-      // Ha még nincs ilyen szendvics, létrehozzuk
-      if (!summary[sandwichName]) {
-        summary[sandwichName] = { total: 0, buyers: {} };
-      }
-      
-      // Hozzáadjuk a darabszámot a végösszeghez
-      summary[sandwichName].total += item.quantity;
-      
-      // Hozzáadjuk a vásárlóhoz a darabszámot
-      if (!summary[sandwichName].buyers[userName]) {
-        summary[sandwichName].buyers[userName] = 0;
-      }
-      summary[sandwichName].buyers[userName] += item.quantity;
-    });
-  });
+    if (!adminOrders) return summary;
   
-  return summary;
-};  
+    // 🔒 A SZŰRÉS: Csak azokat a rendeléseket tartjuk meg, amik az eheti hétfő utániak
+    const thisMonday = getThisMonday();
+    const thisWeekOrders = adminOrders.filter(order => new Date(order.createdAt) >= thisMonday);
+  
+    // Itt már a szűrt listán (thisWeekOrders) megyünk végig, nem a teljes adminOrders-ön!
+    thisWeekOrders.forEach(order => {
+      const userName = order.user?.name || 'Ismeretlen';
+      
+      order.items.forEach(item => {
+        const sandwichName = item.sandwich?.name || 'Ismeretlen szendvics';
+        
+        if (!summary[sandwichName]) {
+          summary[sandwichName] = { total: 0, buyers: {} };
+        }
+        
+        summary[sandwichName].total += item.quantity;
+        
+        if (!summary[sandwichName].buyers[userName]) {
+          summary[sandwichName].buyers[userName] = 0;
+        }
+        summary[sandwichName].buyers[userName] += item.quantity;
+      });
+    });
+    
+    return summary;
+  }; 
 
   const handleAddSandwich = async (e) => {
     e.preventDefault()
