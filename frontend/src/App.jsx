@@ -436,8 +436,8 @@ const styles = {
                     {message}
                   </div>
                 )}
-                <input type="email" placeholder="E-mail cím" value={email} onChange={e => setEmail(e.target.value); setMessage('');} style={styles.input} />
-                <input type="password" placeholder="Jelszó" value={password} onChange={e => setPassword(e.target.value); setMessage('');} style={styles.input} />
+                <input type="email" placeholder="E-mail cím" value={email} onChange={e => { setEmail(e.target.value); setMessage(''); }} style={styles.input} />
+                <input type="password" placeholder="Jelszó" value={password} onChange={e => { setPassword(e.target.value); setMessage(''); }} style={styles.input} />
                 <button onClick={handleLogin} style={{ ...styles.btnSuccess, width: '100%', padding: '16px', fontSize: '16px', marginTop: '10px' }}>
                   Bejelentkezés
                 </button>
