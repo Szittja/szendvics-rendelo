@@ -53,6 +53,7 @@ function App() {
   const [adminOrders, setAdminOrders] = useState([])
   const [adminSummary, setAdminSummary] = useState(null)
   const [adminUsers, setAdminUsers] = useState([])
+  const [adminMessage, setAdminMessage] = useState('')
 
   const [newSandwichName, setNewSandwichName] = useState('')
   const [newSandwichPrice, setNewSandwichPrice] = useState('')
@@ -205,6 +206,35 @@ function App() {
       [sandwichId]: numericValue
     }));
   };
+
+  const handleAdminDeleteOrder = async (orderId) => {
+  if (!window.confirm('Biztosan törölni szeretnéd ezt a rendelést? Ez a művelet nem vonható vissza!')) {
+    return;
+  }
+
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${orderId}`, {
+      method: 'DELETE',
+    });
+
+    if (res.ok) {
+      setAdminOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
+
+      setAdminMessage("✅ A rendelés sikeresen törölve!");
+      
+      setTimeout(() => setAdminMessage(""), 3000);
+      
+    } else {
+      const data = await res.json();
+      setAdminMessage("❌ Hiba a törlésnél: " + data.error);
+      setTimeout(() => setAdminMessage(""), 5000);
+    }
+  } catch (error) {
+    console.error("Hiba történt a törlés során:", error);
+    setAdminMessage("❌ Szerverhiba történt a művelet során.");
+    setTimeout(() => setAdminMessage(""), 5000);
+  }
+};
 
   const addToCart = (sandwich) => {
     setOrderMessage('')
@@ -549,6 +579,21 @@ const styles = {
                       {order.items.map(i => <li key={i.id}>{i.quantity}x {i.sandwich?.name}</li>)}
                     </ul>
 
+                    {adminMessage && (
+                      <div style={{ 
+                        background: adminMessage.includes('❌') ? '#fee2e2' : '#d1fae5', 
+                        color: adminMessage.includes('❌') ? '#991b1b' : '#065f46', 
+                        padding: '10px 15px', 
+                        borderRadius: '8px', 
+                        marginBottom: '15px',
+                        textAlign: 'center',
+                        fontWeight: '500',
+                        border: adminMessage.includes('❌') ? '1px solid #f87171' : '1px solid #34d399'
+                      }}>
+                        {adminMessage}
+                      </div>
+                    )}
+
                     {/* ADMIN SZÁMÁRA MEGJELENŐ VISSZAJELZÉS */}
                     {order.feedback && (
                       <div style={{ marginTop: '10px', background: '#fee2e2', borderLeft: '4px solid #ef4444', padding: '8px 12px', borderRadius: '4px', fontSize: '14px', color: '#7f1d1d', maxWidth: '300px' }}>
@@ -565,6 +610,22 @@ const styles = {
                       {order.isPaid ? '✅ Fizetve' : '⏳ Tartozik'}
                     </button>
                   </div>
+                  <button 
+                    onClick={() => handleAdminDeleteOrder(order.id)}
+                    style={{ 
+                      background: '#ef4444', 
+                      color: 'white', 
+                      border: 'none', 
+                      padding: '8px 12px', 
+                      borderRadius: '6px', 
+                      cursor: 'pointer', 
+                      fontSize: '13px',
+                      fontWeight: 'bold',
+                      marginLeft: '15px' // Hogy ne tapadjon rá a szövegre
+                    }}
+                  >
+                    🗑️ Törlés
+                  </button>
                 </div>
               ))}
             </div>
