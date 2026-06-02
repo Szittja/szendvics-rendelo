@@ -392,11 +392,11 @@ const styles = {
     },
 
     // RESPONSIVE ELRENDEZÉS
-    pageContainer: { maxWidth: '1200px', margin: '0 auto', padding: '20px', boxSizing: 'border-box', width: '100%' },
+    pageContainer: { maxWidth: '1200px', margin: '0 auto', padding: '15px', boxSizing: 'border-box', width: '100%' },
     headerWrap: { display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px' },
-    gridContainer: { display: 'flex', flexWrap: 'wrap', gap: '30px', alignItems: 'flex-start' },
-    gridColumnMain: { flex: '1 1 500px', minWidth: '280px', width: '100%', boxSizing: 'border-box' },
-    gridColumnSide: { flex: '1 1 300px', minWidth: '280px', width: '100%', boxSizing: 'border-box' },
+    gridContainer: { display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start', width: '100%' },
+    gridColumnMain: { flex: '1 1 65%', minWidth: '300px', width: '100%', boxSizing: 'border-box' },
+    gridColumnSide: { flex: '1 1 30%', minWidth: '300px', width: '100%', boxSizing: 'border-box' },
 
     // MODERN KÁRTYÁK (Lágyabb dobozok, kerekebb sarkok)
     card: { 
@@ -552,6 +552,8 @@ const styles = {
         ) : isAdminView ? (
           /* ================= ADMIN MŰSZERFAL ================= */
           <div style={styles.gridContainer}>
+            
+            {/* BAL OSZLOP: ÖSSZESÍTÉS ÉS RENDELÉSEK */}
             <div style={styles.gridColumnMain}>
               <h2 style={styles.textMain}>📊 Eheti Összesített Beszerzés</h2>
               {adminSummary && (
@@ -616,62 +618,57 @@ const styles = {
                       </div>
                     )}
                   </div>
+                  
                   {/* JOBB OLDALI RÉSZ (Ár és Akció gombok) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
-                      
-                      {/* Végösszeg */}
-                      <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b' }}>
-                        {order.totalPrice} Ft
-                      </div>
-                    
-                      {/* Gombok egy tökéletesen igazított sorban */}
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        
-                        {/* Fizetve / Tartozik gomb */}
-                        <button 
-                          onClick={async () => {
-                            await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${order.id}/pay`, { method: 'PUT' });
-                            loadAdminData();
-                          }} 
-                          style={{ 
-                            ...styles.btnPrimary, 
-                            background: order.isPaid ? '#10b981' : '#f59e0b', 
-                            width: '120px',
-                            padding: '8px 0',
-                            fontSize: '13px',
-                            margin: 0 // Biztosítjuk, hogy ne legyen felesleges elcsúszás
-                          }}
-                        >
-                          {order.isPaid ? '✅ Fizetve' : '⏳ Tartozik'}
-                        </button>
-                    
-                        {/* Törlés gomb */}
-                        <button 
-                          onClick={() => handleAdminDeleteOrder(order.id)}
-                          style={{ 
-                            background: '#ef4444', 
-                            color: 'white', 
-                            border: 'none', 
-                            padding: '8px 12px', 
-                            borderRadius: '6px', 
-                            cursor: 'pointer', 
-                            fontSize: '13px',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            alignItems: 'center',
-                            margin: 0
-                          }}
-                        >
-                          🗑️ Törlés
-                        </button>
-                    
-                      </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b' }}>
+                      {order.totalPrice} Ft
+                    </div>
+                  
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        onClick={async () => {
+                          await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${order.id}/pay`, { method: 'PUT' });
+                          loadAdminData();
+                        }} 
+                        style={{ 
+                          ...styles.btnPrimary, 
+                          background: order.isPaid ? '#10b981' : '#f59e0b', 
+                          width: '120px',
+                          padding: '8px 0',
+                          fontSize: '13px',
+                          margin: 0
+                        }}
+                      >
+                        {order.isPaid ? '✅ Fizetve' : '⏳ Tartozik'}
+                      </button>
+                  
+                      <button 
+                        onClick={() => handleAdminDeleteOrder(order.id)}
+                        style={{ 
+                          background: '#ef4444', 
+                          color: 'white', 
+                          border: 'none', 
+                          padding: '8px 12px', 
+                          borderRadius: '6px', 
+                          cursor: 'pointer', 
+                          fontSize: '13px',
+                          fontWeight: 'bold',
+                          display: 'flex',
+                          alignItems: 'center',
+                          margin: 0
+                        }}
+                      >
+                        🗑️ Törlés
+                      </button>
                     </div>
                   </div>
-            ))}
+                </div>
+              ))}
+            </div>
 
-            {/* MENÜ SZERKESZTÉSE */}
-            <div>
+            {/* 👑 JOBB OSZLOP: KÍNÁLAT MÓDOSÍTÁSA (ÁTTÉVE IDE!) */}
+            <div style={styles.gridColumnSide}>
               <h2 style={styles.textMain}>🍔 Kínálat Módosítása</h2>
               <div style={styles.card}>
                 <form onSubmit={handleAddSandwich} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '25px', paddingBottom: '25px', borderBottom: '1px solid #e2e8f0' }}>
@@ -712,7 +709,8 @@ const styles = {
                 ))}
               </div>
             </div>
-            {/* ================= ÚJ SZEKCIÓ: FELHASZNÁLÓK KEZELÉSE ================= */}
+
+            {/* ALSÓ SZEKCIÓ: FELHASZNÁLÓK KEZELÉSE (Ez teljes szélességű marad) */}
             <div style={{ width: '100%', marginTop: '40px' }}>
               <h2 style={styles.textMain}>👥 Regisztrált Felhasználók</h2>
               <div style={{ ...styles.card, overflowX: 'auto' }}>
@@ -727,7 +725,7 @@ const styles = {
                   </thead>
                   <tbody>
                     {adminUsers.map(u => (
-                      <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <tr style={{ borderBottom: '1px solid #f1f5f9' }} key={u.id}>
                         <td style={{ padding: '12px', fontWeight: 'bold' }}>{u.name || '-'}</td>
                         <td style={{ padding: '12px', color: '#475569' }}>{u.email}</td>
                         <td style={{ padding: '12px' }}>
@@ -760,8 +758,8 @@ const styles = {
                 </table>
               </div>
             </div>
+
           </div>
-         </div>   
         ) : (
           /* ================= RENDELÉSI FELÜLET ================= */
           <div style={styles.gridContainer}>
@@ -769,7 +767,12 @@ const styles = {
             {/* BAL OSZLOP: KÍNÁLAT ÉS HISTÓRIA */}
             <div style={styles.gridColumnMain}>
               <h2 style={styles.textMain}>Elérhető finomságok</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+                gap: '20px',
+                width: '100%' 
+              }}>
                 {sandwiches.filter(sw => sw.isActive).map(sw => (
                   <div key={sw.id} style={{ ...styles.card, margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
                     <div>
