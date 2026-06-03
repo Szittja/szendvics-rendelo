@@ -30,17 +30,22 @@ const getStartOfCurrentWeek = () => {
 const isOrderTimeValid = () => {
   const now = new Date();
   //const now = new Date('2026-05-26T12:00:00Z'); // TESZTELÉSHEZ FIX IDŐPONT! Élesben: const now = new Date();
-  const day = now.getDay();
-  const hours = now.getHours();
+  const nowStr = new Date().toLocaleString("en-US", {timeZone: "Europe/Budapest"});
+  const huDate = new Date(nowStr);
+  
+  const day = huDate.getDay();
+  const hours = huDate.getHours();
   // Kedd (2) egész nap VAGY Szerda (3) és 10 óra előtt
   return day === 2 || (day === 3 && hours < 10);
 };
 
 // --- MIDDLEWARE: Értékelési időablak ellenőrzése ---
 const checkFeedbackWindow = (req, res, next) => {
-  const now = new Date();
-  const day = now.getDay(); 
-  const hours = now.getHours();
+  const nowStr = new Date().toLocaleString("en-US", {timeZone: "Europe/Budapest"});
+  const huDate = new Date(nowStr);
+  
+  const day = huDate.getDay(); 
+  const hours = huDate.getHours();
 
   // Csak szerda (3) 12:00 után, VAGY csütörtökön (4) egész nap
   const isFeedbackOpen = (day === 3 && hours >= 12) || (day === 4);
