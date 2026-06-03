@@ -72,7 +72,7 @@ function Login({ onLoginSuccess }) {
               </div>
             )}
             <input type="email" placeholder="E-mail cím" value={email} onChange={e => { setEmail(e.target.value); setMessage(''); }} style={styles.input} />
-            <input type="password" placeholder="Jelszó" value={password} onChange={e => { setPassword(e.target.value); setMessage(''); }} style={styles.input} />
+            <input type="password" placeholder="Jelszó" value={password} onChange={e => { setPassword(e.target.value); setMessage(''); }} style={styles.input} onKeyDown={e => { if (e.key === 'Enter') handleLogin(e); }}/>
             <button 
                 onClick={handleLogin} 
                 disabled={isLoading}
