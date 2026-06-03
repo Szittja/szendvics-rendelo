@@ -1,4 +1,10 @@
 import { useState, useEffect } from 'react'
+import { styles } from './styles';
+import Login from './components/Login';
+import Cart from './components/Cart';
+import AdminDashboard from './components/AdminDashboard';
+import ProfileSettings from './components/ProfileSettings';
+import SandwichCard from './components/SandwichCard';
 import './App.css'
 
 function App() {
@@ -7,7 +13,9 @@ function App() {
     const savedUser = localStorage.getItem('sandwichUser');
     return savedUser ? JSON.parse(savedUser) : null;
   })
-  
+
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+
   const [cart, setCart] = useState(() => {
     const savedCart = localStorage.getItem('sandwichCart');
     return savedCart ? JSON.parse(savedCart) : [];
@@ -21,48 +29,11 @@ function App() {
   const [myOrders, setMyOrders] = useState([])
   const [hasUnpaid, setHasUnpaid] = useState(false)
   const [orderMessage, setOrderMessage] = useState('')
-  const [message, setMessage] = useState('')
 
   const [isProfileView, setIsProfileView] = useState(false)
-  const [editProfileName, setEditProfileName] = useState('')
-  const [editProfileEmail, setEditProfileEmail] = useState('')
-  const [editProfilePassword, setEditProfilePassword] = useState('')
-  const [profileMessage, setProfileMessage] = useState('')
-
-  useEffect(() => {
-    if (user) {
-      setEditProfileName(user.name || '')
-      setEditProfileEmail(user.email || '')
-      setEditProfilePassword('') // Jelszót direkt üresen hagyjuk
-    }
-  }, [user, isProfileView])
-
-  const [expandedSandwiches, setExpandedSandwiches] = useState({});
-  const toggleSandwichDetails = (sandwichId) => {
-    setExpandedSandwiches(prev => ({
-      ...prev,
-      [sandwichId]: !prev[sandwichId] // Ha nyitva volt, becsukja, ha csukva, kinyitja
-    }));
-  };
-  
-  const [isLoginView, setIsLoginView] = useState(true)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
-
+    
   const [isAdminView, setIsAdminView] = useState(false)
-  const [adminOrders, setAdminOrders] = useState([])
-  const [adminSummary, setAdminSummary] = useState(null)
-  const [adminUsers, setAdminUsers] = useState([])
-  const [adminMessage, setAdminMessage] = useState('')
-
-  const [newSandwichName, setNewSandwichName] = useState('')
-  const [newSandwichPrice, setNewSandwichPrice] = useState('')
-  const [editingSandwichId, setEditingSandwichId] = useState(null)
-  const [editSandwichName, setEditSandwichName] = useState('')
-  const [editSandwichPrice, setEditSandwichPrice] = useState('')
-  const [editSandwichIsActive, setEditSandwichIsActive] = useState(true)
-
+  
   const [isOrderingOpen, setIsOrderingOpen] = useState(false)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
 
@@ -117,86 +88,9 @@ function App() {
     setHasUnpaid(data.some(order => order.isPaid === false))
   }
 
-  const loadAdminData = async () => {
-    const resOrders = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders`)
-    setAdminOrders(await resOrders.json())
-    const resSummary = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/summary`)
-    setAdminSummary(await resSummary.json())
-    const resUsers = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users`)
-    setAdminUsers(await resUsers.json())
-  }
-
   useEffect(() => {
-    if (isAdminView) loadAdminData()
     if (user && !isAdminView) loadMyOrders(user.id)
   }, [isAdminView, user])
-
-  const handleRoleChange = async (userId, newRole) => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}/role`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: newRole, requesterId: user.id }) // Elküldjük, hogy ki kéri a módosítást
-    });
-    
-    if (res.ok) {
-      loadAdminData(); // Újratöltjük a listát, hogy látszódjon a változás
-    } else {
-      const data = await res.json();
-      alert(data.error); // Ha más próbálja nyomkodni, hibaüzenetet kap
-    }
-  }
-
-  const getDetailedSummary = () => {
-    const summary = {};
-    
-    if (!adminOrders) return summary;
-  
-    // 🔒 A SZŰRÉS: Csak azokat a rendeléseket tartjuk meg, amik az eheti hétfő utániak
-    const thisMonday = getThisMonday();
-    const thisWeekOrders = adminOrders.filter(order => new Date(order.createdAt) >= thisMonday);
-  
-    // Itt már a szűrt listán (thisWeekOrders) megyünk végig, nem a teljes adminOrders-ön!
-    thisWeekOrders.forEach(order => {
-      const userName = order.user?.name || 'Ismeretlen';
-      
-      order.items.forEach(item => {
-        const sandwichName = item.sandwich?.name || 'Ismeretlen szendvics';
-        
-        if (!summary[sandwichName]) {
-          summary[sandwichName] = { total: 0, buyers: {} };
-        }
-        
-        summary[sandwichName].total += item.quantity;
-        
-        if (!summary[sandwichName].buyers[userName]) {
-          summary[sandwichName].buyers[userName] = 0;
-        }
-        summary[sandwichName].buyers[userName] += item.quantity;
-      });
-    });
-    
-    return summary;
-  }; 
-
-  const handleAddSandwich = async (e) => {
-    e.preventDefault()
-    await fetch(`${import.meta.env.VITE_API_URL}/api/admin/sandwiches`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newSandwichName, price: newSandwichPrice })
-    })
-    setNewSandwichName(''); setNewSandwichPrice('');
-    loadSandwiches()
-  }
-
-  const handleUpdateSandwich = async (id) => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/admin/sandwiches/${id}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: editSandwichName, price: editSandwichPrice, isActive: editSandwichIsActive })
-    })
-    setEditingSandwichId(null)
-    loadSandwiches()
-    if (!isAdminView && user) loadMyOrders(user.id) // Frissítjük a user rendeléseit, hátha eltűnt belőle valami
-  }
 
   const handleQuantityChange = (sandwichId, value) => {
     // A beírt értéket számmá alakítjuk. Ha valaki kitörölné, alapértelmezetten 1-et adunk neki.
@@ -208,34 +102,6 @@ function App() {
     }));
   };
 
-  const handleAdminDeleteOrder = async (orderId) => {
-  if (!window.confirm('Biztosan törölni szeretnéd ezt a rendelést? Ez a művelet nem vonható vissza!')) {
-    return;
-  }
-
-  try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${orderId}`, {
-      method: 'DELETE',
-    });
-
-    if (res.ok) {
-      setAdminOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
-
-      setAdminMessage("✅ A rendelés sikeresen törölve!");
-      
-      setTimeout(() => setAdminMessage(""), 3000);
-      
-    } else {
-      const data = await res.json();
-      setAdminMessage("❌ Hiba a törlésnél: " + data.error);
-      setTimeout(() => setAdminMessage(""), 5000);
-    }
-  } catch (error) {
-    console.error("Hiba történt a törlés során:", error);
-    setAdminMessage("❌ Szerverhiba történt a művelet során.");
-    setTimeout(() => setAdminMessage(""), 5000);
-  }
-};
 
   const addToCart = (sandwich) => {
     setOrderMessage('')
@@ -249,21 +115,27 @@ function App() {
   }
 
   const submitOrder = async () => {
-    const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-    const items = cart.map(item => ({ sandwichId: item.sandwichId, quantity: item.quantity }))
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id, items, totalPrice })
-    })
-    const data = await res.json()
-    if (res.ok) {
-      setOrderMessage("✅ " + data.message)
-      setCart([])
-      loadMyOrders(user.id)
-    } else {
-      setOrderMessage("❌ " + data.error)
+      setIsSubmittingOrder(true); // ⏳ Töltés indítása
+      
+      try {
+        const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+        const items = cart.map(item => ({ sandwichId: item.sandwichId, quantity: item.quantity }))
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id, items, totalPrice })
+        })
+        const data = await res.json()
+        if (res.ok) {
+          setOrderMessage("✅ " + data.message)
+          setCart([])
+          loadMyOrders(user.id)
+        } else {
+          setOrderMessage("❌ " + data.error)
+        }
+      } finally {
+        setIsSubmittingOrder(false); // 🛑 Töltés leállítása
+      }
     }
-  }
 
   const updateOrderItem = async (itemId, newQuantity) => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/order-items/${itemId}`, {
@@ -306,164 +178,16 @@ function App() {
     }
   }
 
-  const handleLogin = async (e) => {
-    e.preventDefault()
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/login`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    })
-    const data = await res.json()
-    if (res.ok) {
-       setUser(data);
-       localStorage.setItem('sandwichUser', JSON.stringify(data)); 
-       setMessage(''); 
-      } else { 
-        setMessage("❌ " + data.error) 
-      }
-  }
-  
-  const handleRegister = async () => {
-    if (!name || !email || !password) {
-      alert("Kérlek, tölts ki minden mezőt!");
-      return;
-    }
-    
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }) 
-    });
-
-    if (res.ok) {
-      setMessage("✅ Sikeres regisztráció! Jelentkezz be.");
-      setIsLoginView(true); // Visszavált a bejelentkező űrlapra
-      // Opcionális: Kiürítjük a mezőket a sikeres regisztráció után
-      setName('');
-      setPassword('');
-    } else {
-      const data = await res.json();
-      alert("Hiba: " + data.error);
-    }
-  };
-
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault()
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${user.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: editProfileName, email: editProfileEmail, password: editProfilePassword })
-    })
-    const data = await res.json()
-    if (res.ok) {
-      setProfileMessage('✅ ' + data.message)
-      setUser(data.user) // Azonnali frissítés a felületen
-      localStorage.setItem('sandwichUser', JSON.stringify(data.user)) // A localStorage is frissül
-      setEditProfilePassword('')
-    } else {
-      setProfileMessage('❌ ' + data.error)
-    }
-  }
-
   const handleLogout = () => { setUser(null); setCart([]); setIsAdminView(false); setHasUnpaid(false); localStorage.removeItem('sandwichUser');}
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
-  // STÍLUS OBJEKTUMOK A DESIGNHOZ
-const styles = {
-    // MODERN GOMBOK (Színátmenetesek, szép árnyékkal)
-    btnPrimary: { background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '14px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 15px rgba(79, 70, 229, 0.3)' },
-    btnSuccess: { background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '14px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)' },
-    btnDanger: { background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '14px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)' },
-    
-    // MODERN MEZŐK (Világos téma, határozott körvonallal)
-    input: { padding: '14px 16px', borderRadius: '14px', border: '2px solid #e2e8f0', fontSize: '15px', width: '100%', boxSizing: 'border-box', background: '#f8fafc', color: '#0f172a', outline: 'none' }, 
-    
-    // TYPOGRÁFIA
-    textMain: { color: '#0f172a', fontWeight: '800', letterSpacing: '-0.5px' },
-
-    // JAVÍTOTT BEJELENTKEZÉS (Szélesebb doboz, több tér)
-    loginContainer: { 
-      background: 'white', padding: '50px 40px', borderRadius: '24px', 
-      boxShadow: '0 20px 50px rgba(0,0,0,0.08)',
-      maxWidth: '450px', width: '90%', margin: '10vh auto', 
-      display: 'flex', flexDirection: 'column', gap: '20px', boxSizing: 'border-box'
-    },
-    loginHeader: {
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '15px'
-    },
-
-    // RESPONSIVE ELRENDEZÉS
-    pageContainer: { maxWidth: '1200px', margin: '0 auto', padding: '15px', boxSizing: 'border-box', width: '100%' },
-    headerWrap: { display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '15px' },
-    gridContainer: { display: 'flex', flexWrap: 'wrap', gap: '20px', alignItems: 'flex-start', width: '100%' },
-    gridColumnMain: { flex: '1 1 65%', minWidth: '300px', width: '100%', boxSizing: 'border-box' },
-    gridColumnSide: { flex: '1 1 30%', minWidth: '300px', width: '100%', boxSizing: 'border-box' },
-
-    // MODERN KÁRTYÁK (Lágyabb dobozok, kerekebb sarkok)
-    card: { 
-      background: 'white', padding: '25px', borderRadius: '24px', 
-      boxShadow: '0 10px 30px rgba(0,0,0,0.03)', marginBottom: '20px', 
-      border: '1px solid #f1f5f9', boxSizing: 'border-box', width: '100%'
-    }
-  }
-
   if (!user) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter", "Segoe UI", sans-serif' }}>
-        <div style={styles.loginContainer}>
-          
-          <div style={styles.loginHeader}>
-            {/* LOGÓ: Ha van saját képed, töröld ki a <div style={{ fontSize... dobozt, és használd az alatta lévő img taget! */}
-            <div style={{ fontSize: '60px', marginBottom: '5px' }}>🥪</div>
-            {/* <img src="/a_te_logod.png" alt="Logo" style={{ height: '70px', marginBottom: '10px' }} /> */}
-            
-            <h1 style={{ ...styles.textMain, margin: 0, textAlign: 'center', fontSize: '28px' }}>Céges Szendvics</h1>
-            <p style={{ color: '#64748b', margin: 0, fontSize: '15px' }}>Üdvözlünk! Jelentkezz be a rendeléshez.</p>
-          </div>
-          {isLoginView ? (
-              <>
-                {/* --- BEJELENTKEZÉS NÉZET --- */}
-                {message && (
-                  <div style={{ 
-                    background: message.includes('❌') ? '#fee2e2' : '#d1fae5', 
-                    color: message.includes('❌') ? '#991b1b' : '#065f46', 
-                    padding: '10px', 
-                    borderRadius: '5px', 
-                    marginBottom: '15px', 
-                    textAlign: 'center', 
-                    fontSize: '14px', 
-                    border: message.includes('❌') ? '1px solid #f87171' : '1px solid #34d399' 
-                  }}>
-                    {message}
-                  </div>
-                )}
-                <input type="email" placeholder="E-mail cím" value={email} onChange={e => { setEmail(e.target.value); setMessage(''); }} style={styles.input} />
-                <input type="password" placeholder="Jelszó" value={password} onChange={e => { setPassword(e.target.value); setMessage(''); }} style={styles.input} />
-                <button onClick={handleLogin} style={{ ...styles.btnSuccess, width: '100%', padding: '16px', fontSize: '16px', marginTop: '10px' }}>
-                  Bejelentkezés
-                </button>
-                
-                <p onClick={() => setIsLoginView(false)} style={{ textAlign: 'center', fontSize: '14px', color: '#4f46e5', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>
-                  Nincs még fiókod? Regisztrálj itt!
-                </p>
-              </>
-            ) : (
-              <>
-                {/* --- REGISZTRÁCIÓ NÉZET --- */}
-                <input type="text" placeholder="Teljes neved (pl. Teszt Elek)" value={name} onChange={e => setName(e.target.value)} style={styles.input} />
-                <input type="email" placeholder="E-mail cím" value={email} onChange={e => setEmail(e.target.value)} style={styles.input} />
-                <input type="password" placeholder="Jelszó" value={password} onChange={e => setPassword(e.target.value)} style={styles.input} />
-                <button onClick={handleRegister} style={{ ...styles.btnSuccess, width: '100%', padding: '16px', fontSize: '16px', marginTop: '10px' }}>
-                  Regisztráció
-                </button>
-                
-                <p onClick={() => setIsLoginView(true)} style={{ textAlign: 'center', fontSize: '14px', color: '#4f46e5', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>
-                  Már van fiókod? Jelentkezz be!
-                </p>
-              </>
-            )}
-        </div>
-      </div>
-    )
+      <Login onLoginSuccess={(userData) => {
+        setUser(userData);
+        localStorage.setItem('sandwichUser', JSON.stringify(userData));
+      }} />
+    );
   }
 
   return (
@@ -516,246 +240,15 @@ const styles = {
         )}
 
         {isProfileView ? (
+          
           /* ================= PROFIL BEÁLLÍTÁSOK ================= */
-          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-            <h2 style={styles.textMain}>⚙️ Profil Beállítások</h2>
-            <div style={styles.card}>
-              <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                
-                <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#475569' }}>Név</label>
-                  <input type="text" value={editProfileName} onChange={e => setEditProfileName(e.target.value)} style={{ ...styles.input, background: 'white' }} placeholder="Pl. Kiss Péter" />
-                </div>
-                
-                <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#475569' }}>E-mail cím</label>
-                  <input type="email" value={editProfileEmail} onChange={e => setEditProfileEmail(e.target.value)} style={{ ...styles.input, background: 'white' }} required />
-                </div>
-                
-                <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#475569' }}>Új jelszó (Opcionális)</label>
-                  <input type="password" value={editProfilePassword} onChange={e => setEditProfilePassword(e.target.value)} style={{ ...styles.input, background: 'white' }} placeholder="Csak akkor töltsd ki, ha módosítani akarod" />
-                </div>
-                
-                <button type="submit" style={{ ...styles.btnSuccess, marginTop: '10px', padding: '14px' }}>Mentés</button>
-
-                {profileMessage && (
-                  <div style={{ marginTop: '10px', padding: '12px', borderRadius: '8px', textAlign: 'center', fontWeight: 'bold', background: profileMessage.startsWith('✅') ? '#d1fae5' : '#fee2e2', color: profileMessage.startsWith('✅') ? '#065f46' : '#991b1b' }}>
-                    {profileMessage}
-                  </div>
-                )}
-              </form>
-            </div>
-            <button onClick={() => setIsProfileView(false)} style={{ ...styles.btnPrimary, background: '#64748b', boxShadow: 'none' }}>⬅️ Vissza a rendeléshez</button>
-          </div>
+          <ProfileSettings user={user} setUser={setUser} setIsProfileView={setIsProfileView} />
 
         ) : isAdminView ? (
-          /* ================= ADMIN MŰSZERFAL ================= */
-          <div style={styles.gridContainer}>
-            
-            {/* BAL OSZLOP: ÖSSZESÍTÉS ÉS RENDELÉSEK */}
-            <div style={styles.gridColumnMain}>
-              <h2 style={styles.textMain}>📊 Eheti Összesített Beszerzés</h2>
-              {adminSummary && (
-                <div style={{ ...styles.card, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
-                  <ul style={{ paddingLeft: '0', fontSize: '16px', lineHeight: '2', listStyle: 'none' }}>
-                    {Object.entries(getDetailedSummary()).map(([sandwichName, data]) => (
-                      <li key={sandwichName} style={{ marginBottom: '10px', borderBottom: '1px solid #bfdbfe', paddingBottom: '10px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span><b>{data.total} db</b> - {sandwichName}</span>
-                          <button
-                            onClick={() => setExpandedSandwiches(prev => ({ ...prev, [sandwichName]: !prev[sandwichName] }))}
-                            style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
-                          >
-                            {expandedSandwiches[sandwichName] ? '🔼 Bezár' : '🔽 Kik rendelték?'}
-                          </button>
-                        </div>
-                        
-                        {/* LENYÍLÓ RÉSZ */}
-                        {expandedSandwiches[sandwichName] && (
-                          <ul style={{ paddingLeft: '20px', marginTop: '5px', fontSize: '14px', color: '#475569', listStyleType: 'disc' }}>
-                            {Object.entries(data.buyers).map(([buyer, qty]) => (
-                              <li key={buyer}><b>{buyer}:</b> {qty} db</li>
-                            ))}
-                          </ul>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                  <h3 style={{ margin: '20px 0 0 0', color: '#1e40af' }}>Mindösszesen: {adminSummary.totalQuantity} db szendvics | Összérték: {adminSummary.totalPrice} Ft</h3>
-                </div>
-              )}
-
-              {adminMessage && (
-                <div style={{ 
-                  position: 'fixed', // Ettől fog lebegni a képernyőn
-                  top: '20px', 
-                  right: '20px', 
-                  zIndex: 9999, // Hogy biztosan minden felett legyen
-                  background: adminMessage.includes('❌') ? '#fee2e2' : '#10b981', 
-                  color: adminMessage.includes('❌') ? '#991b1b' : 'white', 
-                  padding: '16px 24px', 
-                  borderRadius: '12px', 
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.15)', // Szép, modern árnyék
-                  fontWeight: 'bold',
-                  fontSize: '15px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px'
-                }}>
-                  {adminMessage.includes('❌') ? '❌' : '✅'} {adminMessage.replace('❌ ', '').replace('✅ ', '')}
-                </div>
-              )}
-
-              <h2 style={{...styles.textMain, marginTop: '40px' }}>Részletes rendelési lista</h2>
-              {adminOrders.map(order => (
-                <div key={order.id} style={{ ...styles.card, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px' }}>
-                  
-                  {/* BAL OLDAL: Adatok (mobilon kitölti a szélességet, így a gombok aláugranak) */}
-                  <div style={{ flex: '1 1 250px', minWidth: '200px' }}>
-                    <h3 style={{ margin: '0 0 5px 0', color: '#334155' }}>{order.user?.name}</h3>
-                    <span style={{ fontSize: '13px', color: '#64748b' }}>{new Date(order.createdAt).toLocaleDateString('hu-HU')}</span>
-                    <ul style={{ marginTop: '10px', paddingLeft: '20px', color: '#475569' }}>
-                      {order.items.map(i => <li key={i.id} style={{ marginBottom: '4px' }}>{i.quantity}x {i.sandwich?.name}</li>)}
-                    </ul>
-
-                    {order.feedback && (
-                      <div style={{ marginTop: '10px', background: '#fee2e2', borderLeft: '4px solid #ef4444', padding: '8px 12px', borderRadius: '4px', fontSize: '14px', color: '#7f1d1d', maxWidth: '100%' }}>
-                        ⚠️ <b>Probléma jelentve:</b> {order.feedback}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* JOBB OLDAL: Ár és Akció gombok (mobilon szintén igazodik) */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px', flex: '1 1 auto', minWidth: '150px' }}>
-                    
-                    {/* Végösszeg */}
-                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b' }}>
-                      {order.totalPrice} Ft
-                    </div>
-                  
-                    {/* Gombok sora */}
-                    <div style={{ display: 'flex', gap: '8px', width: '100%', justifyContent: 'flex-end' }}>
-                      
-                      {/* Fizetve / Tartozik gomb */}
-                      <button 
-                        onClick={async () => {
-                          await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${order.id}/pay`, { method: 'PUT' });
-                          loadAdminData();
-                        }} 
-                        style={{ ...styles.btnPrimary, background: order.isPaid ? '#10b981' : '#f59e0b', padding: '8px 12px', fontSize: '13px', margin: 0, boxShadow: 'none', flex: '1 1 auto', maxWidth: '120px' }}
-                      >
-                        {order.isPaid ? '✅ Fizetve' : '⏳ Tartozik'}
-                      </button>
-                  
-                      {/* Törlés gomb */}
-                      <button 
-                        onClick={() => handleAdminDeleteOrder(order.id)}
-                        style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold', display: 'flex', alignItems: 'center', margin: 0 }}
-                      >
-                        🗑️ Törlés
-                      </button>
-                  
-                    </div>
-                  </div>
-
-                </div>
-              ))}
-            </div>
-
-            {/* 👑 JOBB OSZLOP: KÍNÁLAT MÓDOSÍTÁSA (ÁTTÉVE IDE!) */}
-            <div style={styles.gridColumnSide}>
-              <h2 style={styles.textMain}>🍔 Kínálat Módosítása</h2>
-              <div style={styles.card}>
-                <form onSubmit={handleAddSandwich} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '25px', paddingBottom: '25px', borderBottom: '1px solid #e2e8f0' }}>
-                  <h4 style={{ margin: 0 }}>Új tétel hozzáadása</h4>
-                  <input type="text" placeholder="Szendvics neve" value={newSandwichName} onChange={e => setNewSandwichName(e.target.value)} required style={styles.input}/>
-                  <input type="number" placeholder="Ára (Ft)" value={newSandwichPrice} onChange={e => setNewSandwichPrice(e.target.value)} required style={styles.input}/>
-                  <button type="submit" style={styles.btnSuccess}>+ Mentés a kínálatba</button>
-                </form>
-
-                <h4 style={{ marginBottom: '15px' }}>Jelenlegi Finomságok</h4>
-                {sandwiches.map(sw => (
-                  <div key={sw.id} style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '10px', background: sw.isActive ? 'white' : '#f1f5f9', opacity: sw.isActive ? 1 : 0.7 }}>
-                    {editingSandwichId === sw.id ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <input type="text" value={editSandwichName} onChange={e => setEditSandwichName(e.target.value)} style={styles.input} />
-                        <input type="number" value={editSandwichPrice} onChange={e => setEditSandwichPrice(e.target.value)} style={styles.input} />
-                        
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                          <input type="checkbox" checked={editSandwichIsActive} onChange={e => setEditSandwichIsActive(e.target.checked)} style={{ width: '20px', height: '20px' }}/>
-                          Elérhető a kínálatban (Aktív)
-                        </label>
-
-                        <div style={{ display: 'flex', gap: '5px' }}>
-                          <button onClick={() => handleUpdateSandwich(sw.id)} style={{ ...styles.btnSuccess, flex: 1, padding: '6px' }}>Mentés</button>
-                          <button onClick={() => setEditingSandwichId(null)} style={{ ...styles.btnDanger, flex: 1, padding: '6px' }}>Mégse</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <b>{sw.name}</b> {sw.isActive ? '✅' : '❌'}<br/>
-                          <span style={{ color: sw.isActive ? '#10b981' : '#64748b' }}>{sw.price} Ft</span>
-                        </div>
-                        <button onClick={() => { setEditingSandwichId(sw.id); setEditSandwichName(sw.name); setEditSandwichPrice(sw.price); setEditSandwichIsActive(sw.isActive); }} style={{ ...styles.btnPrimary, padding: '6px 12px', fontSize: '13px', background: '#f59e0b' }}>Szerkesztés</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ALSÓ SZEKCIÓ: FELHASZNÁLÓK KEZELÉSE (Ez teljes szélességű marad) */}
-            <div style={{ width: '100%', marginTop: '40px' }}>
-              <h2 style={styles.textMain}>👥 Regisztrált Felhasználók</h2>
-              <div style={{ ...styles.card, overflowX: 'auto' }}>
-                <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b' }}>
-                      <th style={{ padding: '12px' }}>Név</th>
-                      <th style={{ padding: '12px' }}>E-mail cím</th>
-                      <th style={{ padding: '12px' }}>Szerepkör</th>
-                      <th style={{ padding: '12px', textAlign: 'right' }}>Műveletek</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {adminUsers.map(u => (
-                      <tr style={{ borderBottom: '1px solid #f1f5f9' }} key={u.id}>
-                        <td style={{ padding: '12px', fontWeight: 'bold' }}>{u.name || '-'}</td>
-                        <td style={{ padding: '12px', color: '#475569' }}>{u.email}</td>
-                        <td style={{ padding: '12px' }}>
-                          <span style={{ 
-                            padding: '6px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', 
-                            background: u.role === 'ADMIN' ? '#dbeafe' : '#f1f5f9', 
-                            color: u.role === 'ADMIN' ? '#1e40af' : '#64748b' 
-                          }}>
-                            {u.role === 'ADMIN' ? 'Adminisztrátor' : 'Felhasználó'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px', textAlign: 'right' }}>
-                          {user.id !== u.id && u.email?.toLowerCase() !== 'erdelyi.peter@compmarket.hu' && (
-                            <button 
-                              onClick={() => handleRoleChange(u.id, u.role === 'ADMIN' ? 'USER' : 'ADMIN')}
-                              style={{ 
-                                ...styles.btnPrimary, 
-                                padding: '8px 14px', fontSize: '13px', 
-                                background: u.role === 'ADMIN' ? '#94a3b8' : '#3b82f6',
-                                boxShadow: 'none'
-                              }}
-                            >
-                              {u.role === 'ADMIN' ? '❌ Jog elvétele' : '👑 Admin jog adása'}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
+          
+          /* AZ ÚJ, KISZERVEZETT ADMIN MŰSZERFAL */
+          <AdminDashboard user={user} sandwiches={sandwiches} loadSandwiches={loadSandwiches} />
+          
         ) : (
           /* ================= RENDELÉSI FELÜLET ================= */
           <div className="user-layout">
@@ -767,90 +260,14 @@ const styles = {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', width: '100%' }}>
                 
                 {sandwiches.filter(sw => sw.isActive).map(sw => (
-                  <div key={sw.id} style={{ ...styles.card, margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '120px' }}>
-                    
-                    {/* Szendvics neve és ára */}
-                    <div>
-                      <h3 style={{ margin: '0 0 5px 0', fontSize: '18px' }}>{sw.name}</h3>
-                      <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '16px' }}>{sw.price} Ft</span>
-                    </div>
-                    
-                   {/* 🔒 MODERN, PRÉMIUM BEVITELI MEZŐ ÉS KOSÁRBA GOMB */}
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '15px', borderTop: '1px solid #f1f5f9', paddingTop: '15px', justifyContent: 'center', alignItems: 'center' }}>
-          
-                      <input 
-                        type="number" 
-                        min="1" 
-                        disabled={!isOrderingOpen} 
-                        value={quantities[sw.id] === 0 || quantities[sw.id] === '' ? '' : (quantities[sw.id] || 1)} 
-                        onChange={e => {
-                          const val = e.target.value;
-                          setQuantities(prev => ({
-                            ...prev,
-                            [sw.id]: val === '' ? '' : parseInt(val)
-                          }));
-                        }}
-                        onBlur={e => {
-                          const val = parseInt(e.target.value);
-                          if (!val || val < 1) {
-                            setQuantities(prev => ({
-                              ...prev,
-                              [sw.id]: 1
-                            }));
-                          }
-                        }}
-                        style={{ 
-                          width: '60px', 
-                          height: '48px', 
-                          padding: '0', 
-                          textAlign: 'center', 
-                          borderRadius: '12px', 
-                          border: 'none', 
-                          background: '#f1f5f9', 
-                          fontWeight: '900', 
-                          fontSize: '18px', 
-                          color: '#1e293b', 
-                          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)', 
-                          boxSizing: 'border-box', 
-                          ...(!isOrderingOpen ? { background: '#e2e8f0', color: '#94a3b8', cursor: 'not-allowed' } : {}) 
-                        }} 
-                      />
-
-                      <button 
-                        onClick={() => {
-                          const qty = parseInt(quantities[sw.id]) || 1;
-                          addToCart({ ...sw, id: sw.id }); 
-                        }} 
-                        disabled={!isOrderingOpen}
-                        style={{ 
-                          ...styles.btnPrimary, 
-                          // flex: 1, <-- Ezt töröltük, így már nem húzza szét magát a gomb!
-                          height: '48px', 
-                          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', 
-                          padding: '0 24px', // Kicsit szélesebb belső margó a kényelmes kattintásért
-                          borderRadius: '12px', 
-                          display: 'flex', 
-                          justifyContent: 'center', 
-                          alignItems: 'center',
-                          gap: '8px', 
-                          fontSize: '16px',
-                          fontWeight: 'bold',
-                          color: 'white',
-                          boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)', 
-                          ...(!isOrderingOpen ? disabledStyle : {}) 
-                        }}
-                      >
-                        {/* 🛒 TISZTA FEHÉR SVG KOSÁR IKON */}
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="9" cy="21" r="1"></circle>
-                          <circle cx="20" cy="21" r="1"></circle>
-                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                        </svg>
-                        Kosárba
-                      </button>
-                    </div>
-
-                  </div>
+                  <SandwichCard 
+                    key={sw.id} 
+                    sw={sw} 
+                    quantities={quantities} 
+                    setQuantities={setQuantities} 
+                    isOrderingOpen={isOrderingOpen} 
+                    addToCart={addToCart} 
+                  />
                 ))}
               </div>
             </div>
@@ -959,43 +376,16 @@ const styles = {
               )}
             </div>
 
-            {/* 2. SZEKCIÓ: KOSÁR (A CSS fogja jobbra tenni, mobilon meg középre) */}
-            <div className="section-kosar">
-              <h2 style={styles.textMain}>🛒 Kosár tartalma</h2>
-              <div style={styles.card}>
-                {cart.length === 0 ? (
-                  <p style={{ color: '#64748b', textAlign: 'center', padding: '20px 0' }}>A kosarad még üres. Válassz a kínálatból!</p>
-                ) : (
-                  <div>
-                    {cart.map(item => (
-                      <div key={item.sandwichId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f1f5f9' }}>
-                        <div>
-                          <div style={{ fontWeight: 'bold' }}>{item.quantity}x {item.name}</div>
-                          <span style={{ fontSize: '13px', color: '#64748b' }}>{item.price * item.quantity} Ft</span>
-                        </div>
-                        <button onClick={() => setCart(cart.filter(i => i.sandwichId !== item.sandwichId))} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer' }}>❌</button>
-                      </div>
-                    ))}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', margin: '20px 0', fontWeight: 'bold', fontSize: '18px' }}>
-                      <span>Fizetendő:</span>
-                      <span style={{ color: '#27ae60' }}>{cartTotal} Ft</span>
-                    </div>
-                    <button 
-                      onClick={submitOrder} 
-                      disabled={!isOrderingOpen}
-                      style={{ ...styles.btnSuccess, width: '100%', padding: '14px', fontSize: '16px', ...(!isOrderingOpen ? disabledStyle : {}) }}
-                    >
-                      Rendelés véglegesítése
-                    </button>
-                  </div>
-                )}
-                {orderMessage && (
-                  <div style={{ marginTop: '15px', padding: '12px', borderRadius: '8px', textAlign: 'center', fontWeight: 'bold', background: orderMessage.startsWith('✅') ? '#d1fae5' : '#fee2e2', color: orderMessage.startsWith('✅') ? '#065f46' : '#991b1b' }}>
-                    {orderMessage}
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* 2. SZEKCIÓ: KOSÁR (Kiszervezve a Cart.jsx-be!) */}
+            <Cart 
+              cart={cart} 
+              setCart={setCart} 
+              cartTotal={cartTotal} 
+              submitOrder={submitOrder} 
+              isOrderingOpen={isOrderingOpen} 
+              orderMessage={orderMessage}
+              isSubmittingOrder={isSubmittingOrder} 
+            />
 
           </div>
         )}

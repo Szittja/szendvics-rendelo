@@ -106,7 +106,7 @@ app.post('/api/login', async (req, res) => {
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) return res.status(401).json({ error: "Hibás email vagy jelszó!" });
     
-    res.json({ id: user.id, name: user.name, role: user.role });
+    res.json({ id: user.id, name: user.name, email: user.email, role: user.role });
   } catch (error) { res.status(500).json({ error: "Hiba a bejelentkezés során." }); }
 });
 
