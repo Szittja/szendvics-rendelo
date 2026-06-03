@@ -37,6 +37,8 @@ function App() {
   const [isOrderingOpen, setIsOrderingOpen] = useState(false)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
 
+  const [logoutMessage, setLogoutMessage] = useState('');
+
   // --- SEGÉDFÜGGVÉNY: Az aktuális hét hétfő 00:00 kiszámítása ---
   const getThisMonday = () => {
     const now = new Date();
@@ -179,14 +181,61 @@ function App() {
   }
 
   const handleLogout = () => { setUser(null); setCart([]); setIsAdminView(false); setHasUnpaid(false); localStorage.removeItem('sandwichUser');}
+
+  // --- AUTOMATIKUS KIJELENTKEZTETÉS INAKTIVITÁS MIATT ---
+  useEffect(() => {
+    if (!user) return;
+
+    let inactivityTimer;
+
+    const resetTimer = () => {
+      clearTimeout(inactivityTimer);
+      
+      inactivityTimer = setTimeout(() => {
+        handleLogout();
+        
+        setLogoutMessage("⏱️ Biztonsági okokból 30 perc inaktivitás után a rendszer automatikusan kijelentkeztetett.");
+        
+    
+      }, 1800000);
+    };
+
+    const events = ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'];
+    
+    events.forEach(event => window.addEventListener(event, resetTimer));
+
+    resetTimer();
+
+    return () => {
+      clearTimeout(inactivityTimer);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
+  }, [user]);
+
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
 
   if (!user) {
     return (
+      <>
+        {/* ÚJ, LEBEGŐ FIGYELMEZTETÉS */}
+        {logoutMessage && (
+          <div style={{ 
+            position: 'fixed', top: '20px', right: '20px', zIndex: 9999, 
+            background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', 
+            padding: '16px 24px', borderRadius: '12px', 
+            boxShadow: '0 10px 25px rgba(0,0,0,0.15)', fontWeight: 'bold', 
+            display: 'flex', alignItems: 'center', gap: '10px' 
+          }}>
+            {logoutMessage}
+          </div>
+        )}
       <Login onLoginSuccess={(userData) => {
         setUser(userData);
         localStorage.setItem('sandwichUser', JSON.stringify(userData));
+
+        setLogoutMessage('');
       }} />
+      </>
     );
   }
 
