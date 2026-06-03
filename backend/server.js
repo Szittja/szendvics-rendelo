@@ -88,6 +88,12 @@ const cleanupOldOrders = async () => {
 };
 // Futtatás a szerver elindulásakor
 cleanupOldOrders();
+setInterval(cleanupOldOrders, 24 * 60 * 60 * 1000); // Ezután minden 24 órában lefut újra
+
+// --- ÉBRENTARTÓ VÉGPONT (CRON JOB) ---
+app.get('/api/ping', (req, res) => {
+  res.status(200).json({ status: "ok", message: "A szerver ébren van! ☕" });
+});
 
 // --- AUTH VÉGPONTOK ---
 app.post('/api/register', async (req, res) => {

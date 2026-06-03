@@ -21,4 +21,10 @@ test-data.js
 seed.js
 .vscode/
 Helyi db.session.sql
-
+exportData.js
+makeAdmin.js
+importData.js
+backup.json
+exportOrders.js
+importOrders.js
+orders.json
