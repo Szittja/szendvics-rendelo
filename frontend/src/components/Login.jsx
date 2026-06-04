@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { styles } from '../styles';
+import { toast, Toaster } from 'react-hot-toast'; // 🌟 ÚJ IMPORT
 
 function Login({ onLoginSuccess }) {
   const [isLoginView, setIsLoginView] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  // 🗑️ A "message" state-t teljesen kitöröltük!
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -20,12 +21,11 @@ function Login({ onLoginSuccess }) {
         });
         const data = await res.json();
         if (res.ok) {
-            // 🔒 ÚJ: A tokent letároljuk a memóriában
             localStorage.setItem('sandwichToken', data.token);
-            // Csak a user adatokat adjuk tovább az App.jsx-nek
+            toast.success("Sikeres bejelentkezés!"); // 🌟 ÚJ SIKER ÜZENET
             onLoginSuccess(data.user); 
         } else { 
-            setMessage("❌ " + data.error);
+            toast.error(data.error); // 🌟 ÚJ HIBA ÜZENET
         }
         } finally {
         setIsLoading(false);
@@ -34,8 +34,8 @@ function Login({ onLoginSuccess }) {
 
     const handleRegister = async () => {
         if (!name || !email || !password) {
-        alert("Kérlek, tölts ki minden mezőt!");
-        return;
+          toast.error("Kérlek, tölts ki minden mezőt!"); // 🌟 ÚJ HIBA ÜZENET
+          return;
         }
         
         setIsLoading(true);
@@ -46,12 +46,12 @@ function Login({ onLoginSuccess }) {
             body: JSON.stringify({ name, email, password }) 
         });
         if (res.ok) {
-            setMessage("✅ Sikeres regisztráció! Jelentkezz be.");
+            toast.success("Sikeres regisztráció! Jelentkezz be."); // 🌟 ÚJ SIKER ÜZENET
             setIsLoginView(true);
             setName(''); setPassword('');
         } else {
             const data = await res.json();
-            alert("Hiba: " + data.error);
+            toast.error(data.error); // 🌟 ÚJ HIBA ÜZENET
         }
         } finally {
         setIsLoading(false);
@@ -60,6 +60,10 @@ function Login({ onLoginSuccess }) {
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter", "Segoe UI", sans-serif' }}>
+      
+      {/* 🌟 EZ JELENÍTI MEG AZ ANIMÁLT KÁRTYÁKAT A KÉPERNYŐN */}
+      <Toaster position="top-center" reverseOrder={false} />
+
       <div style={styles.loginContainer}>
         <div style={styles.loginHeader}>
           <div style={{ fontSize: '60px', marginBottom: '5px' }}>🥪</div>
@@ -69,13 +73,9 @@ function Login({ onLoginSuccess }) {
 
         {isLoginView ? (
           <>
-            {message && (
-              <div style={{ background: message.includes('❌') ? '#fee2e2' : '#d1fae5', color: message.includes('❌') ? '#991b1b' : '#065f46', padding: '10px', borderRadius: '5px', marginBottom: '15px', textAlign: 'center', fontSize: '14px', border: message.includes('❌') ? '1px solid #f87171' : '1px solid #34d399' }}>
-                {message}
-              </div>
-            )}
-            <input type="email" placeholder="E-mail cím" value={email} onChange={e => { setEmail(e.target.value); setMessage(''); }} style={styles.input} />
-            <input type="password" placeholder="Jelszó" value={password} onChange={e => { setPassword(e.target.value); setMessage(''); }} style={styles.input} onKeyDown={e => { if (e.key === 'Enter') handleLogin(e); }}/>
+            {/* 🗑️ A régi csúnya hibaüzenet div-et töröltük innen */}
+            <input type="email" placeholder="E-mail cím" value={email} onChange={e => setEmail(e.target.value)} style={styles.input} />
+            <input type="password" placeholder="Jelszó" value={password} onChange={e => setPassword(e.target.value)} style={styles.input} onKeyDown={e => { if (e.key === 'Enter') handleLogin(e); }}/>
             <button 
                 onClick={handleLogin} 
                 disabled={isLoading}

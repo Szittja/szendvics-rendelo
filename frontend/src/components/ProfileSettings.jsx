@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { styles } from '../styles';
+import { toast } from 'react-hot-toast'; // 🌟 ÚJ IMPORT
 
 function ProfileSettings({ user, setUser, setIsProfileView }) {
   const [editProfileName, setEditProfileName] = useState('');
   const [editProfileEmail, setEditProfileEmail] = useState('');
   const [editProfilePassword, setEditProfilePassword] = useState('');
-  const [profileMessage, setProfileMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -17,22 +18,31 @@ function ProfileSettings({ user, setUser, setIsProfileView }) {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${user.id}`, {
-      method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('sandwichToken')}` // 🔒 BIZTONSÁG BEKÖTVE
-      },
-      body: JSON.stringify({ name: editProfileName, email: editProfileEmail, password: editProfilePassword })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setProfileMessage('✅ ' + data.message);
-      setUser(data.user); 
-      localStorage.setItem('sandwichUser', JSON.stringify(data.user)); 
-      setEditProfilePassword('');
-    } else {
-      setProfileMessage('❌ ' + data.error);
+    setIsLoading(true);
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('sandwichToken')}` 
+        },
+        body: JSON.stringify({ name: editProfileName, email: editProfileEmail, password: editProfilePassword })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        toast.success('Adataid sikeresen frissítve!'); // 🌟 SIKER TOAST
+        setUser(data.user); 
+        localStorage.setItem('sandwichUser', JSON.stringify(data.user)); 
+        setEditProfilePassword('');
+      } else {
+        toast.error(data.error); // 🌟 HIBA TOAST
+      }
+    } catch (err) {
+      toast.error('Hálózati hiba történt a mentés során!');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -43,7 +53,7 @@ function ProfileSettings({ user, setUser, setIsProfileView }) {
         <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#475569' }}>Név</label>
-            <input type="text" value={editProfileName} onChange={e => setEditProfileName(e.target.value)} style={{ ...styles.input, background: 'white' }} placeholder="Pl. Kiss Péter" />
+            <input type="text" value={editProfileName} onChange={e => setEditProfileName(e.target.value)} style={{ ...styles.input, background: 'white' }} placeholder="Pl. Kiss Péter" required />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#475569' }}>E-mail cím</label>
@@ -54,13 +64,9 @@ function ProfileSettings({ user, setUser, setIsProfileView }) {
             <input type="password" value={editProfilePassword} onChange={e => setEditProfilePassword(e.target.value)} style={{ ...styles.input, background: 'white' }} placeholder="Csak akkor töltsd ki, ha módosítani akarod" />
           </div>
           
-          <button type="submit" style={{ ...styles.btnSuccess, marginTop: '10px', padding: '14px' }}>Mentés</button>
-
-          {profileMessage && (
-            <div style={{ marginTop: '10px', padding: '12px', borderRadius: '8px', textAlign: 'center', fontWeight: 'bold', background: profileMessage.startsWith('✅') ? '#d1fae5' : '#fee2e2', color: profileMessage.startsWith('✅') ? '#065f46' : '#991b1b' }}>
-              {profileMessage}
-            </div>
-          )}
+          <button type="submit" disabled={isLoading} style={{ ...styles.btnSuccess, marginTop: '10px', padding: '14px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            {isLoading ? <span className="spinner" style={{ width: '20px', height: '20px', borderTopColor: 'white' }}></span> : '💾 Mentés'}
+          </button>
         </form>
       </div>
       <button onClick={() => setIsProfileView(false)} style={{ ...styles.btnPrimary, background: '#64748b', boxShadow: 'none' }}>⬅️ Vissza a rendeléshez</button>

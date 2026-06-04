@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { styles } from '../styles';
+import { toast } from 'react-hot-toast'; // 🌟 ÚJ IMPORT
 
 function AdminDashboard({ user, sandwiches, loadSandwiches }) {
   const [adminOrders, setAdminOrders] = useState([]);
   const [adminSummary, setAdminSummary] = useState(null);
   const [adminUsers, setAdminUsers] = useState([]);
-  const [adminMessage, setAdminMessage] = useState('');
   
   const [isLoadingAdmin, setIsLoadingAdmin] = useState(true);
 
@@ -17,7 +17,6 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
   const [editSandwichPrice, setEditSandwichPrice] = useState('');
   const [editSandwichIsActive, setEditSandwichIsActive] = useState(true);
 
-  // 🔑 SEGÉDFÜGGVÉNY: Hitelesítés beillesztése
   const getAuthHeaders = () => {
     const token = localStorage.getItem('sandwichToken');
     return {
@@ -48,29 +47,31 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
       setAdminOrders(await resOrders.json());
       setAdminSummary(await resSummary.json());
       setAdminUsers(await resUsers.json());
-      
     } catch (error) {
-      console.error("Hiba az admin adatok betöltésekor:", error);
+      toast.error("Hiba az admin adatok betöltésekor!"); // 🌟 HIBA TOAST
     } finally {
       setIsLoadingAdmin(false); 
     }
   };
 
-  useEffect(() => {
-    loadAdminData();
-  }, []);
+  useEffect(() => { loadAdminData(); }, []);
 
   const handleRoleChange = async (userId, newRole) => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}/role`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ role: newRole }) // A requesterId-t a szerver most már biztonságosan a tokenből nézi!
-    });
-    if (res.ok) {
-      loadAdminData();
-    } else {
-      const data = await res.json();
-      alert(data.error);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}/role`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ role: newRole }) 
+      });
+      if (res.ok) {
+        toast.success("Jogosultság módosítva!"); // 🌟 SIKER TOAST
+        loadAdminData();
+      } else {
+        const data = await res.json();
+        toast.error(data.error); // 🌟 HIBA TOAST
+      }
+    } catch (err) {
+      toast.error("Hiba a művelet során!");
     }
   };
 
@@ -95,23 +96,29 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
 
   const handleAddSandwich = async (e) => {
     e.preventDefault();
-    await fetch(`${import.meta.env.VITE_API_URL}/api/admin/sandwiches`, {
-      method: 'POST', 
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ name: newSandwichName, price: newSandwichPrice })
-    });
-    setNewSandwichName(''); setNewSandwichPrice('');
-    loadSandwiches();
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/admin/sandwiches`, {
+        method: 'POST', 
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ name: newSandwichName, price: newSandwichPrice })
+      });
+      toast.success("Új szendvics hozzáadva!");
+      setNewSandwichName(''); setNewSandwichPrice('');
+      loadSandwiches();
+    } catch(err) { toast.error("Hiba a mentésnél!"); }
   };
 
   const handleUpdateSandwich = async (id) => {
-    await fetch(`${import.meta.env.VITE_API_URL}/api/admin/sandwiches/${id}`, {
-      method: 'PUT', 
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ name: editSandwichName, price: editSandwichPrice, isActive: editSandwichIsActive })
-    });
-    setEditingSandwichId(null);
-    loadSandwiches();
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/admin/sandwiches/${id}`, {
+        method: 'PUT', 
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ name: editSandwichName, price: editSandwichPrice, isActive: editSandwichIsActive })
+      });
+      toast.success("Kínálat frissítve!");
+      setEditingSandwichId(null);
+      loadSandwiches();
+    } catch(err) { toast.error("Hiba a frissítésnél!"); }
   };
 
   const handleAdminDeleteOrder = async (orderId) => {
@@ -123,22 +130,18 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
       });
       if (res.ok) {
         setAdminOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
-        setAdminMessage("✅ A rendelés sikeresen törölve!");
-        setTimeout(() => setAdminMessage(""), 3000);
+        toast.success("A rendelés sikeresen törölve!"); // 🌟 SIKER TOAST
       } else {
         const data = await res.json();
-        setAdminMessage("❌ Hiba a törlésnél: " + data.error);
-        setTimeout(() => setAdminMessage(""), 5000);
+        toast.error(data.error); // 🌟 HIBA TOAST
       }
     } catch (error) {
-      setAdminMessage("❌ Szerverhiba történt a művelet során.");
-      setTimeout(() => setAdminMessage(""), 5000);
+      toast.error("Szerverhiba történt a művelet során.");
     }
   };
 
   return (
     <div style={styles.gridContainer}>
-      
       {isLoadingAdmin ? (
         <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', width: '100%', color: '#6b7280' }}>
           <span className="spinner" style={{ borderTopColor: '#4f46e5', width: '50px', height: '50px', marginBottom: '20px' }}></span>
@@ -155,14 +158,10 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
                     <li key={sandwichName} style={{ marginBottom: '10px', borderBottom: '1px solid #bfdbfe', paddingBottom: '10px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span><b>{data.total} db</b> - {sandwichName}</span>
-                        <button
-                          onClick={() => setExpandedSandwiches(prev => ({ ...prev, [sandwichName]: !prev[sandwichName] }))}
-                          style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}
-                        >
+                        <button onClick={() => setExpandedSandwiches(prev => ({ ...prev, [sandwichName]: !prev[sandwichName] }))} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
                           {expandedSandwiches[sandwichName] ? '🔼 Bezár' : '🔽 Kik rendelték?'}
                         </button>
                       </div>
-                      
                       {expandedSandwiches[sandwichName] && (
                         <ul style={{ paddingLeft: '20px', marginTop: '5px', fontSize: '14px', color: '#475569', listStyleType: 'disc' }}>
                           {Object.entries(data.buyers).map(([buyer, qty]) => (
@@ -174,12 +173,6 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
                   ))}
                 </ul>
                 <h3 style={{ margin: '20px 0 0 0', color: '#1e40af' }}>Mindösszesen: {adminSummary.totalQuantity} db szendvics | Összérték: {adminSummary.totalPrice} Ft</h3>
-              </div>
-            )}
-
-            {adminMessage && (
-              <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, background: adminMessage.includes('❌') ? '#fee2e2' : '#10b981', color: adminMessage.includes('❌') ? '#991b1b' : 'white', padding: '16px 24px', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', fontWeight: 'bold', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                {adminMessage.includes('❌') ? '❌' : '✅'} {adminMessage.replace('❌ ', '').replace('✅ ', '')}
               </div>
             )}
 
@@ -203,11 +196,11 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
                   <div style={{ display: 'flex', gap: '8px', width: '100%', justifyContent: 'flex-end' }}>
                     <button 
                       onClick={async () => {
-                        await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${order.id}/pay`, { 
-                            method: 'PUT',
-                            headers: getAuthHeaders() 
-                        });
-                        loadAdminData();
+                        try {
+                          await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${order.id}/pay`, { method: 'PUT', headers: getAuthHeaders() });
+                          toast.success("Fizetési státusz módosítva!");
+                          loadAdminData();
+                        } catch(e) { toast.error("Hiba a mentésnél!"); }
                       }} 
                       style={{ ...styles.btnPrimary, background: order.isPaid ? '#10b981' : '#f59e0b', padding: '8px 12px', fontSize: '13px', margin: 0, boxShadow: 'none', flex: '1 1 auto', maxWidth: '120px' }}
                     >
