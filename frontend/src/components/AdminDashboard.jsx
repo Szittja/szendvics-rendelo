@@ -7,7 +7,6 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
   const [adminUsers, setAdminUsers] = useState([]);
   const [adminMessage, setAdminMessage] = useState('');
   
-  // JAVÍTVA: A változó neve most már isLoadingAdmin, ahogy a loadAdminData-ban is használod
   const [isLoadingAdmin, setIsLoadingAdmin] = useState(true);
 
   const [expandedSandwiches, setExpandedSandwiches] = useState({});
@@ -17,6 +16,15 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
   const [editSandwichName, setEditSandwichName] = useState('');
   const [editSandwichPrice, setEditSandwichPrice] = useState('');
   const [editSandwichIsActive, setEditSandwichIsActive] = useState(true);
+
+  // 🔑 SEGÉDFÜGGVÉNY: Hitelesítés beillesztése
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('sandwichToken');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  };
 
   const getThisMonday = () => {
     const now = new Date();
@@ -28,13 +36,13 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
   };
 
   const loadAdminData = async () => {
-    setIsLoadingAdmin(true); // ⏳ Töltés bekapcsolása
-    
+    setIsLoadingAdmin(true); 
     try {
+      const fetchOpts = { headers: getAuthHeaders() };
       const [resOrders, resSummary, resUsers] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders`),
-        fetch(`${import.meta.env.VITE_API_URL}/api/admin/summary`),
-        fetch(`${import.meta.env.VITE_API_URL}/api/admin/users`)
+        fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders`, fetchOpts),
+        fetch(`${import.meta.env.VITE_API_URL}/api/admin/summary`, fetchOpts),
+        fetch(`${import.meta.env.VITE_API_URL}/api/admin/users`, fetchOpts)
       ]);
 
       setAdminOrders(await resOrders.json());
@@ -44,7 +52,7 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
     } catch (error) {
       console.error("Hiba az admin adatok betöltésekor:", error);
     } finally {
-      setIsLoadingAdmin(false); // 🛑 Töltés kikapcsolása
+      setIsLoadingAdmin(false); 
     }
   };
 
@@ -55,8 +63,8 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
   const handleRoleChange = async (userId, newRole) => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/users/${userId}/role`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: newRole, requesterId: user.id })
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ role: newRole }) // A requesterId-t a szerver most már biztonságosan a tokenből nézi!
     });
     if (res.ok) {
       loadAdminData();
@@ -88,7 +96,8 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
   const handleAddSandwich = async (e) => {
     e.preventDefault();
     await fetch(`${import.meta.env.VITE_API_URL}/api/admin/sandwiches`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', 
+      headers: getAuthHeaders(),
       body: JSON.stringify({ name: newSandwichName, price: newSandwichPrice })
     });
     setNewSandwichName(''); setNewSandwichPrice('');
@@ -97,7 +106,8 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
 
   const handleUpdateSandwich = async (id) => {
     await fetch(`${import.meta.env.VITE_API_URL}/api/admin/sandwiches/${id}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      method: 'PUT', 
+      headers: getAuthHeaders(),
       body: JSON.stringify({ name: editSandwichName, price: editSandwichPrice, isActive: editSandwichIsActive })
     });
     setEditingSandwichId(null);
@@ -107,7 +117,10 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
   const handleAdminDeleteOrder = async (orderId) => {
     if (!window.confirm('Biztosan törölni szeretnéd ezt a rendelést? Ez a művelet nem vonható vissza!')) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${orderId}`, { method: 'DELETE' });
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${orderId}`, { 
+          method: 'DELETE',
+          headers: getAuthHeaders() 
+      });
       if (res.ok) {
         setAdminOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
         setAdminMessage("✅ A rendelés sikeresen törölve!");
@@ -126,17 +139,13 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
   return (
     <div style={styles.gridContainer}>
       
-      {/* 🚀 AZ ÚJ TÖLTÉSI FELTÉTEL ITT KEZDŐDIK */}
       {isLoadingAdmin ? (
-        // ⏳ AMÍG TÖLT
         <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', width: '100%', color: '#6b7280' }}>
           <span className="spinner" style={{ borderTopColor: '#4f46e5', width: '50px', height: '50px', marginBottom: '20px' }}></span>
           <h2 style={{ color: '#475569' }}>Admin adatok szinkronizálása...</h2>
         </div>
       ) : (
-        // ✅ AMIKOR KÉSZ (A teljes eddigi felület egy Fragmentbe zárva)
         <>
-          {/* BAL OSZLOP: ÖSSZESÍTÉS ÉS RENDELÉSEK */}
           <div style={styles.gridColumnMain}>
             <h2 style={styles.textMain}>📊 Eheti Összesített Beszerzés</h2>
             {adminSummary && (
@@ -194,7 +203,10 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
                   <div style={{ display: 'flex', gap: '8px', width: '100%', justifyContent: 'flex-end' }}>
                     <button 
                       onClick={async () => {
-                        await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${order.id}/pay`, { method: 'PUT' });
+                        await fetch(`${import.meta.env.VITE_API_URL}/api/admin/orders/${order.id}/pay`, { 
+                            method: 'PUT',
+                            headers: getAuthHeaders() 
+                        });
                         loadAdminData();
                       }} 
                       style={{ ...styles.btnPrimary, background: order.isPaid ? '#10b981' : '#f59e0b', padding: '8px 12px', fontSize: '13px', margin: 0, boxShadow: 'none', flex: '1 1 auto', maxWidth: '120px' }}
@@ -210,7 +222,6 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
             ))}
           </div>
 
-          {/* JOBB OSZLOP: KÍNÁLAT MÓDOSÍTÁSA */}
           <div style={styles.gridColumnSide}>
             <h2 style={styles.textMain}>🍔 Kínálat Módosítása</h2>
             <div style={styles.card}>
@@ -251,7 +262,6 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
             </div>
           </div>
 
-          {/* ALSÓ SZEKCIÓ: FELHASZNÁLÓK KEZELÉSE */}
           <div style={{ width: '100%', marginTop: '40px', gridColumn: '1 / -1' }}>
             <h2 style={styles.textMain}>👥 Regisztrált Felhasználók</h2>
             <div style={{ ...styles.card, overflowX: 'auto' }}>

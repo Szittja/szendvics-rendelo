@@ -31,7 +31,6 @@ function App() {
   const [orderMessage, setOrderMessage] = useState('')
 
   const [isProfileView, setIsProfileView] = useState(false)
-    
   const [isAdminView, setIsAdminView] = useState(false)
   
   const [isOrderingOpen, setIsOrderingOpen] = useState(false)
@@ -46,11 +45,12 @@ function App() {
     
     if (storedUser && lastActivity) {
       const now = Date.now();
-      const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 perc milliszekundumban
+      const INACTIVITY_LIMIT = 30 * 60 * 1000; 
       
       if (now - parseInt(lastActivity, 10) > INACTIVITY_LIMIT) {
         localStorage.removeItem('sandwichUser');
         localStorage.removeItem('sandwichCart');
+        localStorage.removeItem('sandwichToken'); // ÚJ: Token törlése
         localStorage.removeItem('lastActivityTime');
         
         setUser(null);
@@ -60,15 +60,12 @@ function App() {
     }
   }, []);
 
-  // --- SEGÉDFÜGGVÉNY: Az aktuális hét hétfő 00:00 kiszámítása ---
   const getThisMonday = () => {
     const now = new Date();
     const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay(); 
-    
     const thisMonday = new Date(now);
     thisMonday.setDate(now.getDate() - (dayOfWeek - 1));
     thisMonday.setHours(0, 0, 0, 0);
-    
     return thisMonday;
   };
 
@@ -87,22 +84,44 @@ function App() {
 
     checkTimeWindow()
     const interval = setInterval(checkTimeWindow, 60000) 
-    
     return () => clearInterval(interval)
   }, [])
 
   const disabledStyle = { opacity: 0.5, cursor: 'not-allowed' }
 
+  // 🔑 SEGÉDFÜGGVÉNY: Beépíti a tokent a fejlécekbe
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('sandwichToken');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  };
+
   const loadSandwiches = () => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/sandwiches`)
-      .then(res => res.json())
-      .then(data => setSandwiches(data))
+    fetch(`${import.meta.env.VITE_API_URL}/api/sandwiches`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('sandwichToken')}` }
+    })
+      .then(res => {
+        if (res.status === 401 || res.status === 403) handleLogout();
+        return res.json();
+      })
+      .then(data => {
+        if (Array.isArray(data)) setSandwiches(data);
+      })
+      .catch(err => console.error("Hiba a szendvicsek betöltésekor", err));
   }
 
-  useEffect(() => { loadSandwiches() }, [])
+  useEffect(() => { 
+    if (user) loadSandwiches(); // Csak bejelentkezve töltsük le
+  }, [user])
 
   const loadMyOrders = async (userId) => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/user/${userId}`)
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/user/${userId}`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('sandwichToken')}` }
+    });
+    if (res.status === 401 || res.status === 403) return handleLogout();
+    
     const data = await res.json()
     setMyOrders(data)
     setHasUnpaid(data.some(order => order.isPaid === false))
@@ -135,11 +154,11 @@ function App() {
       setIsSubmittingOrder(true); 
       
       try {
-        const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
         const items = cart.map(item => ({ sandwichId: item.sandwichId, quantity: item.quantity }))
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.id, items, totalPrice })
+          method: 'POST', 
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ items }) // A totalPrice és userId már nem kell, a backend hitelesíti!
         })
         const data = await res.json()
         if (res.ok) {
@@ -147,6 +166,7 @@ function App() {
           setCart([])
           loadMyOrders(user.id)
         } else {
+          if (res.status === 401 || res.status === 403) handleLogout();
           setOrderMessage("❌ " + data.error)
         }
       } finally {
@@ -156,15 +176,21 @@ function App() {
 
   const updateOrderItem = async (itemId, newQuantity) => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/order-items/${itemId}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      method: 'PUT', 
+      headers: getAuthHeaders(),
       body: JSON.stringify({ newQuantity })
     })
+    if (res.status === 401 || res.status === 403) handleLogout();
     if (res.ok) loadMyOrders(user.id)
   }
 
   const cancelOrder = async (orderId) => {
     if(window.confirm("Biztosan törlöd ezt a rendelést?")) {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}`, { method: 'DELETE' })
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}`, { 
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('sandwichToken')}` }
+      })
+      if (res.status === 401 || res.status === 403) handleLogout();
       loadMyOrders(user.id)
     }
   }
@@ -176,7 +202,7 @@ function App() {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/feedback`, {
         method: 'PUT', 
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ feedback: text })
       });
       
@@ -184,11 +210,11 @@ function App() {
         setOrderMessage("✅ Köszönjük a visszajelzést, továbbítottuk az adminnak!");      
         loadMyOrders(user.id); 
       } else {
+        if (res.status === 401 || res.status === 403) handleLogout();
         const data = await res.json();
         setOrderMessage("❌ " + data.error);
       }
     } catch (error) {
-      console.error("Hálózati hiba:", error);
       setOrderMessage("❌ Hálózati hiba! Kérlek, ellenőrizd az internetkapcsolatot.");
     }
   }
@@ -199,6 +225,7 @@ function App() {
     setIsAdminView(false); 
     setHasUnpaid(false); 
     localStorage.removeItem('sandwichUser');
+    localStorage.removeItem('sandwichToken'); // ÚJ: Kilépéskor a tokent is eldobjuk
     localStorage.removeItem('lastActivityTime');
   }
 
@@ -251,13 +278,7 @@ function App() {
     return (
       <>
         {logoutMessage && (
-          <div style={{ 
-            position: 'fixed', top: '20px', right: '20px', zIndex: 9999, 
-            background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', 
-            padding: '16px 24px', borderRadius: '12px', 
-            boxShadow: '0 10px 25px rgba(0,0,0,0.15)', fontWeight: 'bold', 
-            display: 'flex', alignItems: 'center', gap: '10px' 
-          }}>
+          <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '16px 24px', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
             {logoutMessage}
           </div>
         )}

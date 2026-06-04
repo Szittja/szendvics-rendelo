@@ -7,7 +7,6 @@ function ProfileSettings({ user, setUser, setIsProfileView }) {
   const [editProfilePassword, setEditProfilePassword] = useState('');
   const [profileMessage, setProfileMessage] = useState('');
 
-  // Frissíti a beviteli mezőket, amikor a komponens betöltődik
   useEffect(() => {
     if (user) {
       setEditProfileName(user.name || '');
@@ -20,13 +19,16 @@ function ProfileSettings({ user, setUser, setIsProfileView }) {
     e.preventDefault();
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${user.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('sandwichToken')}` // 🔒 BIZTONSÁG BEKÖTVE
+      },
       body: JSON.stringify({ name: editProfileName, email: editProfileEmail, password: editProfilePassword })
     });
     const data = await res.json();
     if (res.ok) {
       setProfileMessage('✅ ' + data.message);
-      setUser(data.user); // Azonnali frissítés a felületen
+      setUser(data.user); 
       localStorage.setItem('sandwichUser', JSON.stringify(data.user)); 
       setEditProfilePassword('');
     } else {

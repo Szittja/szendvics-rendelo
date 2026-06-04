@@ -11,7 +11,7 @@ function Login({ onLoginSuccess }) {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        setIsLoading(true); // ⏳ Töltés indítása
+        setIsLoading(true);
         
         try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/login`, {
@@ -20,12 +20,15 @@ function Login({ onLoginSuccess }) {
         });
         const data = await res.json();
         if (res.ok) {
-            onLoginSuccess(data); 
+            // 🔒 ÚJ: A tokent letároljuk a memóriában
+            localStorage.setItem('sandwichToken', data.token);
+            // Csak a user adatokat adjuk tovább az App.jsx-nek
+            onLoginSuccess(data.user); 
         } else { 
             setMessage("❌ " + data.error);
         }
         } finally {
-        setIsLoading(false); // 🛑 Töltés leállítása
+        setIsLoading(false);
         }
     }
 
@@ -35,7 +38,7 @@ function Login({ onLoginSuccess }) {
         return;
         }
         
-        setIsLoading(true); // ⏳ Töltés indítása
+        setIsLoading(true);
 
         try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/api/register`, {
@@ -51,7 +54,7 @@ function Login({ onLoginSuccess }) {
             alert("Hiba: " + data.error);
         }
         } finally {
-        setIsLoading(false); // 🛑 Töltés leállítása
+        setIsLoading(false);
         }
     };
 
