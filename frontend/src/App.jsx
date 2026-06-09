@@ -36,8 +36,12 @@ function App() {
       const INACTIVITY_LIMIT = 30 * 60 * 1000; 
       
       if (now - parseInt(lastActivity, 10) > INACTIVITY_LIMIT) {
-        logout(); // 🌟 Zustand függvény
-        toast('A munkameneted biztonsági okokból lejárt. Kérlek, jelentkezz be újra!', { icon: '⏱️' });
+        logout(); 
+        // 🌟 ÚJ: Adtunk neki egy ID-t!
+        toast('A munkameneted biztonsági okokból lejárt. Kérlek, jelentkezz be újra!', { 
+          id: 'logout-toast', 
+          icon: '⏱️' 
+        });
       }
     }
   }, []);
@@ -174,7 +178,10 @@ function App() {
     logout(); // 🌟 Zustand függvény mindent töröl a háttérben
     setHasUnpaid(false); 
     if (isAuto === true) {
-      toast('Munkamenet lejárt! Inaktivitás miatt automatikusan kijelentkeztettünk.', { icon: '⏱️' });
+      toast('Munkamenet lejárt! Inaktivitás miatt automatikusan kijelentkeztettünk.', { 
+        id: 'logout-toast', 
+        icon: '⏱️' 
+      });
     }
   }
 
