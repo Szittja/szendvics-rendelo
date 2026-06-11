@@ -177,7 +177,12 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
             )}
 
             <h2 style={{...styles.textMain, marginTop: '40px' }}>Részletes rendelési lista</h2>
-            {adminOrders.map(order => (
+            {[...adminOrders]
+              .sort((a, b) => {
+                if (a.isPaid === b.isPaid) return 0; // Ha azonos a státuszuk, marad a dátum szerinti sorrend
+                return a.isPaid ? 1 : -1; // A fizetetlen (false) előre kerül, a fizetett (true) hátra
+              })
+              .map(order => (
               <div key={order.id} style={{ ...styles.card, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px' }}>
                 <div style={{ flex: '1 1 250px', minWidth: '200px' }}>
                   <h3 style={{ margin: '0 0 5px 0', color: '#334155' }}>{order.user?.name}</h3>

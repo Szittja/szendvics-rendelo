@@ -6,11 +6,11 @@ import AdminDashboard from './components/AdminDashboard';
 import ProfileSettings from './components/ProfileSettings';
 import SandwichCard from './components/SandwichCard';
 import { toast, Toaster } from 'react-hot-toast'; 
-import { useStore } from './store'; // 🌟 ÚJ: A Zustand Raktár importálása
+import { useStore } from './store';
+import SandwichSkeleton from './components/SandwichSkeleton';
 import './App.css'
 
 function App() {
-  // 🌟 ITT VESZÜK KI AZ ADATOKAT ÉS A FÜGGVÉNYEKET A RAKTÁRBÓL
   const { 
     user, setUser, logout, 
     cart, setCart, addToCart, clearCart, 
@@ -19,12 +19,16 @@ function App() {
   } = useStore();
 
   const [sandwiches, setSandwiches] = useState([])
+  const [isLoadingSandwiches, setIsLoadingSandwiches] = useState(true);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [quantities, setQuantities] = useState({})
   const [myOrders, setMyOrders] = useState([])
   const [hasUnpaid, setHasUnpaid] = useState(false)
   const [isOrderingOpen, setIsOrderingOpen] = useState(false)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
+  const [timeLeft, setTimeLeft] = useState('');
+  const [isEndingSoon, setIsEndingSoon] = useState(false);
+  const [isVacationMode, setIsVacationMode] = useState(false);
 
   // 🛡️ BIZTONSÁGI ELLENŐRZÉS INDÍTÁSKOR
   useEffect(() => {
@@ -37,7 +41,6 @@ function App() {
       
       if (now - parseInt(lastActivity, 10) > INACTIVITY_LIMIT) {
         logout(); 
-        // 🌟 ÚJ: Adtunk neki egy ID-t!
         toast('A munkameneted biztonsági okokból lejárt. Kérlek, jelentkezz be újra!', { 
           id: 'logout-toast', 
           icon: '⏱️' 
@@ -61,6 +64,7 @@ function App() {
       if (import.meta.env.VITE_TEST_MODE === 'true') {
         setIsOrderingOpen(true);
         setIsFeedbackOpen(true);
+        setTimeLeft("Teszt mód aktív (Korlátlan idő)");
         return;
       }
 
@@ -68,12 +72,36 @@ function App() {
       const day = now.getDay();
       const hours = now.getHours();
       
-      setIsOrderingOpen(day === 2 || (day === 3 && hours < 10));
+      const isOpen = day === 2 || (day === 3 && hours < 10);
+      setIsOrderingOpen(isOpen);
       setIsFeedbackOpen((day === 3 && hours >= 12) || day === 4);
+
+      // ⏱️ VISSZASZÁMLÁLÓ LOGIKA (Ha nyitva van a rendelés)
+      if (isOpen) {
+        const target = new Date(now);
+        const daysToWednesday = 3 - day;
+        target.setDate(now.getDate() + daysToWednesday);
+        target.setHours(10, 0, 0, 0);
+        
+
+        const diff = target.getTime() - now.getTime();
+        if (diff > 0) {
+          const h = Math.floor(diff / (1000 * 60 * 60));
+          const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const s = Math.floor((diff % (1000 * 60)) / 1000);
+          
+          const formatTime = (num) => num.toString().padStart(2, '0');
+          setTimeLeft(`${formatTime(h)}:${formatTime(m)}:${formatTime(s)}`);
+          setIsEndingSoon(diff <= 15 * 60 * 1000);
+        } else {
+          setTimeLeft('');
+          setIsEndingSoon(false);
+        }
+      }
     }
     
     checkTimeWindow();
-    const interval = setInterval(checkTimeWindow, 60000);
+    const interval = setInterval(checkTimeWindow, 1000); 
     return () => clearInterval(interval);
   }, []);
 
@@ -85,23 +113,84 @@ function App() {
   };
 
   const loadSandwiches = () => {
+    setIsLoadingSandwiches(true);
     fetch(`${import.meta.env.VITE_API_URL}/api/sandwiches`, { headers: getAuthHeaders() })
       .then(res => {
         if (res.status === 401 || res.status === 403) handleLogout(true);
         return res.json();
       })
-      .then(data => { if (Array.isArray(data)) setSandwiches(data); })
-      .catch(err => console.error("Hiba a szendvicsek betöltésekor", err));
+      .then(data => { 
+        if (Array.isArray(data)) setSandwiches(data); 
+        setIsLoadingSandwiches(false); 
+      })
+      .catch(err => {
+        console.error("Hiba a szendvicsek betöltésekor", err);
+        setIsLoadingSandwiches(false);
+      });
   }
 
-  useEffect(() => { if (user) loadSandwiches(); }, [user])
+  const loadSettings = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/settings`);
+      if (res.ok) {
+        const data = await res.json();
+        setIsVacationMode(data.isVacation);
+      }
+    } catch (error) {
+      console.error("Hiba a beállítások betöltésekor", error);
+    }
+  };
+  const toggleVacationMode = async () => {
+    const newState = !isVacationMode;
+    setIsVacationMode(newState); // Azonnali frissítés a felületen
+    
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/settings`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ isVacation: newState })
+      });
+      
+      if (res.ok) {
+        toast.success(newState ? "🏖️ Szabadság mód BEKAPCSOLVA" : "✅ Szabadság mód KIKAPCSOLVA");
+      } else {
+        throw new Error('Hiba a mentésnél');
+      }
+    } catch (error) {
+      setIsVacationMode(!newState); // Visszaállítás, ha hiba volt
+      toast.error("Hiba történt a beállítás mentése során!");
+    }
+  };
+
+  useEffect(() => { if (user) {loadSandwiches(); loadSettings();}}, [user])
 
   const loadMyOrders = async (userId) => {
     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/user/${userId}`, { headers: getAuthHeaders() });
     if (res.status === 401 || res.status === 403) return handleLogout(true);
     const data = await res.json()
     setMyOrders(data)
-    setHasUnpaid(data.some(order => order.isPaid === false))
+
+    const now = new Date();
+    const thisMonday = getThisMonday();
+    
+    const thisWednesday2PM = new Date(thisMonday);
+    thisWednesday2PM.setDate(thisMonday.getDate() + 2);
+    thisWednesday2PM.setHours(14, 0, 0, 0);
+    
+    const isPastDeadline = now >= thisWednesday2PM;
+
+    const hasDebt = data.some(order => {
+      if (order.isPaid) return false; 
+      
+      const orderDate = new Date(order.createdAt);
+      if (orderDate < thisMonday) {
+        return true; 
+      } else {
+        return isPastDeadline; 
+      }
+    });
+    
+    setHasUnpaid(hasDebt);
   }
 
   useEffect(() => {
@@ -112,7 +201,6 @@ function App() {
     setQuantities(prev => ({ ...prev, [sandwichId]: parseInt(value) || 1 }));
   };
 
-  // 🌟 KOSÁRBA RAKÁS ZUSTANDDAL
   const handleAddToCart = (sandwich) => {
     const qty = quantities[sandwich.id] || 1
     addToCart(sandwich, qty); 
@@ -129,7 +217,7 @@ function App() {
         const data = await res.json()
         if (res.ok) {
           toast.success(data.message);
-          clearCart(); // 🌟 Zustand függvény hívása
+          clearCart();
           loadMyOrders(user.id)
         } else {
           if (res.status === 401 || res.status === 403) handleLogout(true);
@@ -175,8 +263,10 @@ function App() {
   }
 
   const handleLogout = (isAuto = false) => { 
-    logout(); // 🌟 Zustand függvény mindent töröl a háttérben
+    toast.dismiss();
+    logout(); 
     setHasUnpaid(false); 
+    
     if (isAuto === true) {
       toast('Munkamenet lejárt! Inaktivitás miatt automatikusan kijelentkeztettünk.', { 
         id: 'logout-toast', 
@@ -223,8 +313,10 @@ function App() {
     return (
       <>
         <Toaster position="top-center" />
-        {/* A Zustand végzi a bejelentkezés mentését a setUser-en keresztül! */}
-        <Login onLoginSuccess={(userData) => setUser(userData)} /> 
+        <Login onLoginSuccess={(userData) => {
+          toast.dismiss();
+          setUser(userData);
+        }} /> 
       </>
     );
   }
@@ -238,7 +330,14 @@ function App() {
           <div style={styles.headerWrap}>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-              <h1 style={{ ...styles.textMain, margin: 0, fontSize: '24px' }}>🥪 Szendvics Rendelő</h1>
+              <h1 style={{ ...styles.textMain, margin: 0, fontSize: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <img 
+                  src="/icon-192.png" 
+                  alt="Logó" 
+                  style={{ width: '32px', height: '32px', borderRadius: '8px', objectFit: 'cover' }} 
+                />
+                Szendvics Szerda
+              </h1>
               {user && (
                 <button 
                   onClick={() => { setIsProfileView(true); setIsAdminView(false); }}
@@ -274,27 +373,89 @@ function App() {
           </div>
         )}
 
+        {isOrderingOpen && !isAdminView && (
+          <div style={{ background: 'white', border: '1px solid #e2e8f0', color: '#334155', padding: '16px 24px', borderRadius: '16px', marginBottom: '25px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '600', fontSize: '15px' }}>
+              ✅ Rendelési időszak nyitva! 
+              <span style={{ color: '#94a3b8', fontWeight: 'normal', fontSize: '14px' }}>(Szerda 10:00-ig)</span>
+            </div>
+
+            <div style={{ background: '#f8fafc', color: '#1e293b', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #e2e8f0', fontWeight: 'bold' }}>
+              ⏱️ Hátralévő idő: 
+              <span style={{ 
+                fontFamily: 'monospace', 
+                fontSize: '16px', 
+                letterSpacing: '1px', 
+                color: isEndingSoon ? '#ef4444' : '#f59e0b',
+                fontWeight: isEndingSoon ? '900' : 'bold',
+                animation: isEndingSoon ? 'pulse 1.5s infinite' : 'none'
+              }}>
+                {timeLeft}
+              </span>
+            </div>
+
+          </div>
+        )}
+
         {isProfileView ? (
           <ProfileSettings user={user} setUser={setUser} setIsProfileView={setIsProfileView} />
         ) : isAdminView ? (
-          <AdminDashboard user={user} sandwiches={sandwiches} loadSandwiches={loadSandwiches} />
-        ) : (
-          <div className="user-layout">
-            <div className="section-kinalat">
-              <h2 style={styles.textMain}>Elérhető finomságok</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', width: '100%' }}>
-                {sandwiches.filter(sw => sw.isActive).map(sw => (
-                  <SandwichCard 
-                    key={sw.id} 
-                    sw={sw} 
-                    quantities={quantities} 
-                    setQuantities={setQuantities} 
-                    isOrderingOpen={isOrderingOpen} 
-                    addToCart={handleAddToCart} 
-                  />
-                ))}
+          <>
+          <div style={{ padding: '20px', background: '#fff', borderRadius: '16px', marginBottom: '25px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px' }}>
+                <div>
+                  <strong style={{ display: 'block', fontSize: '16px', color: '#1e293b' }}>🏖️ Szabadság üzemmód</strong>
+                  <span style={{ color: '#64748b', fontSize: '14px' }}>Ha bekapcsolod, a felhasználók nem látják a kínálatot és nem tudnak rendelni.</span>
+                </div>
+                <button
+                  onClick={toggleVacationMode}
+                  style={{
+                    background: isVacationMode ? '#ef4444' : '#10b981', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', gap: '8px'
+                  }}
+                >
+                  {isVacationMode ? '🔒 Szabadság KIKAPCSOLÁSA' : '🏖️ Szabadság BEKAPCSOLÁSA'}
+                </button>
               </div>
             </div>
+          <AdminDashboard user={user} sandwiches={sandwiches} loadSandwiches={loadSandwiches} /></>
+        ) : (
+          <div className="user-layout">
+              <div className="section-kinalat">
+                <h2 style={styles.textMain}>Elérhető finomságok</h2>
+                
+                {isVacationMode ? (
+                  /* 🏖️ SZABADSÁG ÜZEMMÓD */
+                  <div style={{ textAlign: 'center', padding: '60px 20px', background: 'white', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0', boxSizing: 'border-box', width: '100%' }}>
+                    <h2 style={{ fontSize: '50px', margin: '0 0 15px 0' }}>🏖️</h2>
+                    <h3 style={{ color: '#1e293b', margin: '0 0 10px 0', fontSize: '24px' }}>A héten szabadságon vagyok!</h3>
+                    <p style={{ color: '#64748b', margin: 0, fontSize: '16px', lineHeight: '1.5' }}>
+                      Ezen a héten sajnos szünetel a rendelés. <br />
+                      Jövő héten újra várunk a megszokott, legfinomabb szendvicsekkel!
+                    </p>
+                  </div>
+                ) : (
+                  /* 🥪 NORMÁL ÜZEMMÓD: Kínálat */
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', width: '100%' }}>
+                    {isLoadingSandwiches ? (
+                      Array.from({ length: 6 }).map((_, index) => (
+                        <SandwichSkeleton key={index} />
+                      ))
+                    ) : (
+                      sandwiches.filter(sw => sw.isActive).map(sw => (
+                        <SandwichCard 
+                          key={sw.id} 
+                          sw={sw} 
+                          quantities={quantities} 
+                          setQuantities={setQuantities} 
+                          isOrderingOpen={isOrderingOpen} 
+                          addToCart={handleAddToCart} 
+                        />
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
             
             <div className="section-rendelesek">
               <h2 style={{...styles.textMain, marginTop: '0' }}>Eddigi rendeléseim</h2>

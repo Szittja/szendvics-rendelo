@@ -207,7 +207,7 @@ input[type="number"] {
 /* --- ASZTALI NÉZET (900px felett bekapcsol a rács) --- */
 @media (min-width: 900px) {
   .user-layout {
-    display: grid !important; /* A legfontosabb sor! */
+    display: grid !important; 
     grid-template-columns: 2fr 1fr; 
     align-items: start; 
   }
@@ -239,8 +239,47 @@ input[type="number"] {
   display: inline-block;
   width: 20px;
   height: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3); /* Halvány fehér keret */
+  border: 3px solid rgba(255, 255, 255, 0.3); 
   border-radius: 50%;
-  border-top-color: white; /* A pörgő "feje" élénk fehér */
-  animation: spin 1s ease-in-out infinite; /* 1 másodperces, folyamatos pörgés */
+  border-top-color: white; 
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 🦴 SKELETON TÖLTŐKÉPERNYŐ ANIMÁCIÓ */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.skeleton-wrapper {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.skeleton-element {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(to right, #f1f5f9 4%, #e2e8f0 25%, #f1f5f9 36%);
+  background-size: 1000px 100%;
+  border-radius: 8px;
 }

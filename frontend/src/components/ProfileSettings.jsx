@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { styles } from '../styles';
-import { toast } from 'react-hot-toast'; // 🌟 ÚJ IMPORT
+import { toast } from 'react-hot-toast';
 
 function ProfileSettings({ user, setUser, setIsProfileView }) {
   const [editProfileName, setEditProfileName] = useState('');
@@ -32,12 +32,12 @@ function ProfileSettings({ user, setUser, setIsProfileView }) {
       const data = await res.json();
       
       if (res.ok) {
-        toast.success('Adataid sikeresen frissítve!'); // 🌟 SIKER TOAST
+        toast.success('Adataid sikeresen frissítve!');
         setUser(data.user); 
         localStorage.setItem('sandwichUser', JSON.stringify(data.user)); 
         setEditProfilePassword('');
       } else {
-        toast.error(data.error); // 🌟 HIBA TOAST
+        toast.error(data.error);
       }
     } catch (err) {
       toast.error('Hálózati hiba történt a mentés során!');

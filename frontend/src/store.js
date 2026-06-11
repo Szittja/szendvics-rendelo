@@ -14,7 +14,6 @@ export const useStore = create((set) => ({
     localStorage.removeItem('sandwichUser');
     localStorage.removeItem('sandwichToken');
     localStorage.removeItem('lastActivityTime');
-    // Kilépéskor a kosarat és a nézeteket is alaphelyzetbe állítjuk
     set({ user: null, cart: [], isAdminView: false, isProfileView: false });
   },
 
@@ -31,7 +30,6 @@ export const useStore = create((set) => ({
     } else {
       newCart = [...state.cart, { sandwichId: sandwich.id, name: sandwich.name, price: sandwich.price, quantity: qty }];
     }
-    // Azonnali mentés a memóriába
     localStorage.setItem('sandwichCart', JSON.stringify(newCart));
     return { cart: newCart };
   }),
@@ -46,7 +44,6 @@ export const useStore = create((set) => ({
     set({ cart: [] });
   },
 
-  // 🖥️ NÉZETEK (Hogy ne kelljen prop-ként adogatni őket)
   isAdminView: false,
   setIsAdminView: (val) => set({ isAdminView: val }),
   

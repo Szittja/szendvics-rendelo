@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { styles } from '../styles';
-import { toast, Toaster } from 'react-hot-toast'; // 🌟 ÚJ IMPORT
+import { toast, Toaster } from 'react-hot-toast';
 
 function Login({ onLoginSuccess }) {
   const [isLoginView, setIsLoginView] = useState(true);
@@ -8,7 +8,6 @@ function Login({ onLoginSuccess }) {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  // 🗑️ A "message" state-t teljesen kitöröltük!
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -22,10 +21,10 @@ function Login({ onLoginSuccess }) {
         const data = await res.json();
         if (res.ok) {
             localStorage.setItem('sandwichToken', data.token);
-            toast.success("Sikeres bejelentkezés!"); // 🌟 ÚJ SIKER ÜZENET
+            toast.success("Sikeres bejelentkezés!"); 
             onLoginSuccess(data.user); 
         } else { 
-            toast.error(data.error); // 🌟 ÚJ HIBA ÜZENET
+            toast.error(data.error); 
         }
         } finally {
         setIsLoading(false);
@@ -34,7 +33,7 @@ function Login({ onLoginSuccess }) {
 
     const handleRegister = async () => {
         if (!name || !email || !password) {
-          toast.error("Kérlek, tölts ki minden mezőt!"); // 🌟 ÚJ HIBA ÜZENET
+          toast.error("Kérlek, tölts ki minden mezőt!"); 
           return;
         }
         
@@ -46,12 +45,12 @@ function Login({ onLoginSuccess }) {
             body: JSON.stringify({ name, email, password }) 
         });
         if (res.ok) {
-            toast.success("Sikeres regisztráció! Jelentkezz be."); // 🌟 ÚJ SIKER ÜZENET
+            toast.success("Sikeres regisztráció! Jelentkezz be."); 
             setIsLoginView(true);
             setName(''); setPassword('');
         } else {
             const data = await res.json();
-            toast.error(data.error); // 🌟 ÚJ HIBA ÜZENET
+            toast.error(data.error); 
         }
         } finally {
         setIsLoading(false);
@@ -61,19 +60,37 @@ function Login({ onLoginSuccess }) {
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter", "Segoe UI", sans-serif' }}>
       
-      {/* 🌟 EZ JELENÍTI MEG AZ ANIMÁLT KÁRTYÁKAT A KÉPERNYŐN */}
       <Toaster position="top-center" reverseOrder={false} />
 
       <div style={styles.loginContainer}>
         <div style={styles.loginHeader}>
-          <div style={{ fontSize: '60px', marginBottom: '5px' }}>🥪</div>
-          <h1 style={{ ...styles.textMain, margin: 0, textAlign: 'center', fontSize: '28px' }}>Céges Szendvics</h1>
+          <h2 style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: '12px', 
+            color: '#1e293b', 
+            width: '100%', 
+            margin: '0 0 25px 0',
+            fontSize: '40px', 
+            fontWeight: 'bold',
+            flexWrap: 'wrap', 
+            textAlign: 'center'
+          }}>
+            <img 
+              src="/icon-192.png" 
+              alt="Logó" 
+              style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} 
+            />
+            <span>
+              Szendvics Szerda
+            </span>
+          </h2>
           <p style={{ color: '#64748b', margin: 0, fontSize: '15px' }}>Üdvözlünk! Jelentkezz be a rendeléshez.</p>
         </div>
 
         {isLoginView ? (
           <>
-            {/* 🗑️ A régi csúnya hibaüzenet div-et töröltük innen */}
             <input type="email" placeholder="E-mail cím" value={email} onChange={e => setEmail(e.target.value)} style={styles.input} />
             <input type="password" placeholder="Jelszó" value={password} onChange={e => setPassword(e.target.value)} style={styles.input} onKeyDown={e => { if (e.key === 'Enter') handleLogin(e); }}/>
             <button 

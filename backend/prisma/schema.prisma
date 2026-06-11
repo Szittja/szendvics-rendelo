@@ -44,3 +44,8 @@ model OrderItem {
   order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   sandwich   Sandwich @relation(fields: [sandwichId], references: [id])
 }
+
+model Settings {
+  id         Int     @id @default(1)
+  isVacation Boolean @default(false)
+}

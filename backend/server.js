@@ -5,38 +5,32 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken'); 
 const { PrismaClient } = require('@prisma/client');
-const { z } = require('zod'); // 🛡️ ÚJ IMPORT: Zod validációs könyvtár
+const { z } = require('zod');
 
 const prisma = new PrismaClient();
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// =====================================================================
-// 🛡️ BIZTONSÁG 2.0: ZOD VALIDÁCIÓS SÉMÁK
-// =====================================================================
-
 const registerSchema = z.object({
   name: z.string().min(3, "A névnek legalább 3 karakternek kell lennie!").max(50, "A név túl hosszú!"),
   email: z.string().email("Érvénytelen e-mail cím formátum!"),
-  password: z.string().min(3, "A jelszónak legalább 3 karakterből kell állnia!")
+  password: z.string().min(2, "A jelszónak legalább 2 karakterből kell állnia!")
 });
 
 const loginSchema = z.object({
   email: z.string().email("Érvénytelen e-mail cím formátum!"),
-  password: z.string().min(3, "A jelszó megadása kötelező!")
+  password: z.string().min(2, "A jelszó megadása kötelező!")
 });
 
 const updateProfileSchema = z.object({
   name: z.string().min(3, "A név legalább 3 karakter kell legyen!").max(50),
   email: z.string().email("Érvénytelen e-mail cím!"),
-  // A jelszó opcionális, de ha megadják, min 3 karakter kell legyen
-  password: z.string().optional().refine(val => !val || val.length >= 3, "Az új jelszónak legalább 3 karakternek kell lennie!")
+  password: z.string().optional().refine(val => !val || val.length >= 2, "Az új jelszónak legalább 2 karakternek kell lennie!")
 });
 
 const sandwichSchema = z.object({
   name: z.string().min(3, "A szendvics neve legalább 3 karakter legyen!").max(50, "Túl hosszú név!"),
-  // A coerce.number() biztosítja, hogy ha a frontend "1200" szövegként küldi, számmá alakítja
   price: z.coerce.number({ invalid_type_error: "Az árnak számnak kell lennie!" }).int().positive("Az ár nem lehet nulla vagy negatív!"),
   isActive: z.boolean().optional()
 });
@@ -52,16 +46,11 @@ const feedbackSchema = z.object({
   feedback: z.string().min(5, "A panasznak legalább 5 karakter hosszú kell lennie!").max(500, "A panasz túl hosszú!")
 });
 
-// 🛡️ A VALIDÁCIÓS ŐRSZEM (Middleware)
-// Ez a kis blokk elfogja a kérést, leellenőrzi a Zod sémával, és azonnal visszadobja, ha rossz az adat!
-// 🛡️ BIZTONSÁGI ŐRSZEM - VÉGLEGES, GOLYÓÁLLÓ VERZIÓ
 const validateData = (schema) => {
   return (req, res, next) => {
     const result = schema.safeParse(req.body);
     
     if (!result.success) {
-      // Biztonságos kiolvasás: megpróbálja az 'issues'-t, majd az 'errors'-t. 
-      // Ha egyik sincs, nem fagy le, hanem beugrik az alapértelmezett szöveg!
       const errorMessage = 
         result.error?.issues?.[0]?.message || 
         result.error?.errors?.[0]?.message || 
@@ -69,15 +58,9 @@ const validateData = (schema) => {
         
       return res.status(400).json({ error: errorMessage });
     }
-    
-    // Ha minden jó, mehet tovább a végpontra!
     next();
   };
 };
-
-// =====================================================================
-// --- KORÁBBI BIZTONSÁGI KÖZTESRÉTEGEK (JWT & Admin) ---
-// =====================================================================
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -149,7 +132,6 @@ setInterval(cleanupOldOrders, 24 * 60 * 60 * 1000);
 
 app.get('/api/ping', async (req, res) => { 
   try {
-    // 🛡️ BIZTONSÁGOS ÉBRENTARTÁS: Küldünk egy villámgyors "üres" kérdést a Prismán át
     await prisma.$queryRaw`SELECT 1`; 
     res.status(200).json({ status: "ok", message: "A szerver ÉS az adatbázis is ébren van! ☕" }); 
   } catch (error) {
@@ -162,7 +144,38 @@ app.get('/api/ping', async (req, res) => {
 // --- VÉGPONTOK (Most már Zod védelemmel!) ---
 // =====================================================================
 
-// 🔒 Itt kapja meg a validateData az ő feladatát!
+app.get('/api/settings', async (req, res) => {
+  try {
+    let settings = await prisma.settings.findFirst();
+    if (!settings) {
+      settings = await prisma.settings.create({ data: { isVacation: false } });
+    }
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: "Hiba a beállítások lekérésekor." });
+  }
+});
+
+app.put('/api/settings', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const { isVacation } = req.body;
+    let settings = await prisma.settings.findFirst();
+    
+    if (settings) {
+      settings = await prisma.settings.update({
+        where: { id: settings.id },
+        data: { isVacation: Boolean(isVacation) }
+      });
+    } else {
+      settings = await prisma.settings.create({ data: { isVacation: Boolean(isVacation) } });
+    }
+    
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: "Hiba a beállítások mentésekor." });
+  }
+});
+
 app.post('/api/register', validateData(registerSchema), async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -214,7 +227,7 @@ app.put('/api/users/:id', authenticateToken, validateData(updateProfileSchema), 
   }
 });
 
-// 🔒 Visszajelzés validációja (min 5 karakter!)
+// 🔒 Visszajelzés validációja
 app.put('/api/orders/:id/feedback', authenticateToken, checkFeedbackWindow, validateData(feedbackSchema), async (req, res) => {
   try {
     const orderId = parseInt(req.params.id);
@@ -288,7 +301,6 @@ app.post('/api/orders', authenticateToken, validateData(orderSchema), async (req
     const validNewItems = [];
 
     for (const item of items) {
-      // A negatív és nulla darabszámokat már a Zod elkapta a kapuban!
       const sandwich = await prisma.sandwich.findUnique({ where: { id: item.sandwichId } });
       if (!sandwich) return res.status(404).json({ error: `A szendvics nem található.` });
       if (!sandwich.isActive) return res.status(400).json({ error: `A(z) ${sandwich.name} jelenleg nem rendelhető!` });
