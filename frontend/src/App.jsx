@@ -302,18 +302,21 @@ function App() {
   // 🔔 PUSH ÉRTESÍTÉSEK ENGEDÉLYEZÉSE
   const subscribeToPush = async () => {
 
-    console.log("🔑 FRONTEND Publikus Kulcs:", import.meta.env.VITE_VAPID_PUBLIC_KEY ? import.meta.env.VITE_VAPID_PUBLIC_KEY.substring(0, 15) + "..." : "HIÁNYZIK!");
-
-    // 1. Támogatja-e a böngésző?
-    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Nitification' in window)) {
-      toast.error("Az eszközöd sajnos nem támogatja a push értesítéseket!");
+    // 1. Támogatja-e a böngésző a legalapvetőbb funkciókat?
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      toast.error("Ebből a böngészőből nem lehet feliratkozni! (Használj Chrome-ot, iOS-en pedig a Safariból add a Főképernyőhöz!)");
       return;
     }
 
     // 2. Engedély kérése a felhasználótól
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      toast.error("Nem adtál engedélyt az értesítésekre, így nem tudunk szólni!");
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        toast.error("Nem adtál engedélyt az értesítésekre, így nem tudunk szólni!");
+        return;
+      }
+    } catch (error) {
+      toast.error("Hiba az engedély kérésekor! Próbáld meg Chrome-ból telepíteni az alkalmazást.");
       return;
     }
 
@@ -430,7 +433,7 @@ function App() {
       });
 
       const data = await res.json();
-      toast.info(data.message); // Vagy a te egyedi toast/értesítési rendszered
+      toast.info(data.message); 
     } catch (error) {
       console.error("Hiba a küldésnél:", error);
       toast.error("Hiba történt a küldés során.");
@@ -498,24 +501,28 @@ function App() {
     }
   };
 
-  // Belépéskor ellenőrizzük, kell-e mutatni a felugrót
+  // 🔕 IDEIGLENESEN KIKAPCSOLVA AZ ÉRTESÍTÉS BEKÉRŐ ABLAK LOGIKÁJA
+  /*
   useEffect(() => {
     if (user && !isAdminView) {
       const promptAnswered = localStorage.getItem('pushPromptAnswered');
-      const isPushSupported = 'Notification' in window;
-      // Csak akkor mutatjuk, ha még nem nyilatkozott, ÉS a böngésző még nem tiltotta le végleg ('default' állapot)
-      if (isPushSupported && !promptAnswered && window.Notification.permission === 'default') {
-        // Kis késleltetés (1.5 mp), hogy ne azonnal az arcába ugorjon betöltéskor
-        const timer = setTimeout(() => setShowPushPrompt(true), 1500);
-        return () => clearTimeout(timer);
+      const isPushSupported = 'serviceWorker' in navigator && 'PushManager' in window;
+
+      if (isPushSupported && !promptAnswered) {
+        const permission = 'Notification' in window ? Notification.permission : 'default';
+        if (permission === 'default') {
+          const timer = setTimeout(() => setShowPushPrompt(true), 1500);
+          return () => clearTimeout(timer);
+        }
       }
     }
   }, [user, isAdminView]);
+  */
 
   const handleAcceptPushPrompt = async () => {
     localStorage.setItem('pushPromptAnswered', 'true');
     setShowPushPrompt(false);
-    await subscribeToPush(); // Meghívjuk a már létező feliratkozós függvényedet
+    await subscribeToPush(); 
   };
 
   const handleDeclinePushPrompt = () => {
@@ -751,8 +758,8 @@ function App() {
           {/* ⚙️ RENDSZER BEÁLLÍTÁSOK (Admin nézetben) */}
             <div style={{ padding: '20px', background: 'var(--bg-card)', borderRadius: '16px', marginBottom: '25px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', border: '1px solid var(--border-color)' }}>              
               
-              {/* 1. Szabadság mód */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px', marginBottom: '15px' }}>
+              {/* 1. Szabadság mód (EZT MEGHAGYTUK!) */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px' }}>
                 <div>
                   <strong style={{ display: 'block', fontSize: '15px', color: 'var(--text-main)' }}>🏖️ Szabadság üzemmód</strong>
                   <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Ha bekapcsolod, a felhasználók nem látják a kínálatot és nem tudnak rendelni.</span>
@@ -762,8 +769,9 @@ function App() {
                 </button>
               </div>
 
-              {/* 2. Globális értesítés */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px', marginBottom: '15px' }}>
+              {/* 🔕 IDEIGLENESEN KIKAPCSOLVA: 2. Globális értesítés */}
+              {/*
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px', marginBottom: '15px', marginTop: '15px', borderTop: '1px solid var(--border-color)', paddingTop: '15px' }}>
                 <div>
                   <strong style={{ display: 'block', fontSize: '15px', color: 'var(--text-main)' }}>📢 Értesítés küldése mindenkinek</strong>
                   <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Azonnali push üzenet küldése az összes feliratkozónak.</span>
@@ -772,8 +780,10 @@ function App() {
                   💬 Üzenet írása
                 </button>
               </div>
+              */}
 
-              {/* 3. Célzott értesítés a tartozóknak */}
+              {/* 🔕 IDEIGLENESEN KIKAPCSOLVA: 3. Célzott értesítés a tartozóknak */}
+              {/*
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '15px' }}>
                 <div>
                   <strong style={{ display: 'block', fontSize: '15px', color: 'var(--text-main)' }}>💸 Tartozók figyelmeztetése</strong>
@@ -783,6 +793,7 @@ function App() {
                   💸 Emlékeztető küldése
                 </button>
               </div>
+              */}
 
             </div>
             
@@ -916,8 +927,8 @@ function App() {
         )}
       </div>
 
-      {/* 🌟 Egyszeri Értesítés Bekérő Ablak */}
-      {showPushPrompt && (
+      {/* 🔕 IDEIGLENESEN KIKAPCSOLVA AZ EGYSZERI ÉRTESÍTÉS BEKÉRŐ ABLAK */}
+      {/* {showPushPrompt && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
@@ -947,6 +958,7 @@ function App() {
           </div>
         </div>
       )}
+      */}
     
       {/* 📢 Frissítési Jegyzék (Changelog) Modal */}
       {showChangelog && (
