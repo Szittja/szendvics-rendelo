@@ -1,21 +1,12 @@
 [
   {
-    "version": "v1.3.0",
+    "version": "v1.2.0",
     "date": "2026. 06. 12.",
     "changes": [
       "🌙 Sötét mód (Dark Mode) bevezetése! A fejlécben lévő gombbal válthatsz a világos és sötét téma között, amit az eszközöd meg is jegyez.",
       "📢 Újdonságok ablak (Changelog) hozzáadása. Ezentúl a fejlécben egy piros pöttyel jelezzük, ha új funkciók érkeztek.",
       "💅 Teljes dizájn ráncfelvarrás: Elegánsabb betöltő animációk, szemet kímélőbb figyelmeztető sávok és a témához intelligensen alkalmazkodó felugró üzenetek.",
       "✅ Teljeskörű optimalizálás a mobilnézetre, a kosárra és a profil beállításokra."
-    ]
-  },
-  {
-    "version": "v1.2.0",
-    "date": "2026. 06. 11.",
-    "changes": [
-      "🔔 Push értesítések bevezetése! Mostantól azonnal értesülhetsz a rendelésekről.",
-      "💸 Célzott fizetési emlékeztetők a tartozóknak.",
-      "⚙️ A profil beállításokhoz átkerült az értesítések kezelése."
     ]
   },
   {
