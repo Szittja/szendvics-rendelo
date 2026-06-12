@@ -305,8 +305,8 @@ function App() {
     console.log("🔑 FRONTEND Publikus Kulcs:", import.meta.env.VITE_VAPID_PUBLIC_KEY ? import.meta.env.VITE_VAPID_PUBLIC_KEY.substring(0, 15) + "..." : "HIÁNYZIK!");
 
     // 1. Támogatja-e a böngésző?
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      toast.error("A böngésződ sajnos nem támogatja a push értesítéseket!");
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Nitification' in window)) {
+      toast.error("Az eszközöd sajnos nem támogatja a push értesítéseket!");
       return;
     }
 
@@ -502,8 +502,9 @@ function App() {
   useEffect(() => {
     if (user && !isAdminView) {
       const promptAnswered = localStorage.getItem('pushPromptAnswered');
+      const isPushSupported = 'Notification' in window;
       // Csak akkor mutatjuk, ha még nem nyilatkozott, ÉS a böngésző még nem tiltotta le végleg ('default' állapot)
-      if (!promptAnswered && Notification.permission === 'default') {
+      if (isPushSupported && !promptAnswered && window.Notification.permission === 'default') {
         // Kis késleltetés (1.5 mp), hogy ne azonnal az arcába ugorjon betöltéskor
         const timer = setTimeout(() => setShowPushPrompt(true), 1500);
         return () => clearTimeout(timer);
