@@ -58,9 +58,31 @@ function Login({ onLoginSuccess }) {
     };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter", "Segoe UI", sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Inter", "Segoe UI", sans-serif' }}>
       
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster 
+        position="top-center" 
+        reverseOrder={false} 
+        toastOptions={{
+          style: {
+            background: 'var(--bg-card)',
+            color: 'var(--text-main)',
+            border: '1px solid var(--border-color)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: 'var(--bg-card)',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: 'var(--bg-card)',
+            },
+          },
+        }}
+      />
 
       <div style={styles.loginContainer}>
         <div style={styles.loginHeader}>
@@ -69,7 +91,7 @@ function Login({ onLoginSuccess }) {
             alignItems: 'center', 
             justifyContent: 'center', 
             gap: '12px', 
-            color: '#1e293b', 
+            color: 'var(--text-main)', 
             width: '100%', 
             margin: '0 0 25px 0',
             fontSize: '40px', 
@@ -86,7 +108,7 @@ function Login({ onLoginSuccess }) {
               Szendvics Szerda
             </span>
           </h2>
-          <p style={{ color: '#64748b', margin: 0, fontSize: '15px' }}>Üdvözlünk! Jelentkezz be a rendeléshez.</p>
+          <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '15px' }}>Üdvözlünk! Jelentkezz be a rendeléshez.</p>
         </div>
 
         {isLoginView ? (
@@ -100,7 +122,7 @@ function Login({ onLoginSuccess }) {
             >
                 {isLoading ? <span className="spinner"></span> : 'Bejelentkezés'}
             </button>
-            <p onClick={() => setIsLoginView(false)} style={{ textAlign: 'center', fontSize: '14px', color: '#4f46e5', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Nincs még fiókod? Regisztrálj itt!</p>
+            <p onClick={() => setIsLoginView(false)} style={{ textAlign: 'center', fontSize: '14px', color: '#6366f1', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Nincs még fiókod? Regisztrálj itt!</p>
           </>
         ) : (
           <>
@@ -114,7 +136,7 @@ function Login({ onLoginSuccess }) {
             >
                 {isLoading ? <span className="spinner"></span> : 'Regisztráció'}
             </button>
-            <p onClick={() => setIsLoginView(true)} style={{ textAlign: 'center', fontSize: '14px', color: '#4f46e5', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Már van fiókod? Jelentkezz be!</p>
+            <p onClick={() => setIsLoginView(true)} style={{ textAlign: 'center', fontSize: '14px', color: '#6366f1', fontWeight: 'bold', cursor: 'pointer', marginTop: '15px' }}>Már van fiókod? Jelentkezz be!</p>
           </>
         )}
       </div>

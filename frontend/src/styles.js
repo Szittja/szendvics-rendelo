@@ -3,11 +3,11 @@ export const styles = {
   btnSuccess: { background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '14px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)' },
   btnDanger: { background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '14px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)' },
   
-  input: { padding: '14px 16px', borderRadius: '14px', border: '2px solid #e2e8f0', fontSize: '15px', width: '100%', boxSizing: 'border-box', background: '#f8fafc', color: '#0f172a', outline: 'none' }, 
-  textMain: { color: '#0f172a', fontWeight: '800', letterSpacing: '-0.5px' },
+  input: { padding: '14px 16px', borderRadius: '14px', border: '2px solid var(--border-color)', fontSize: '15px', width: '100%', boxSizing: 'border-box', background: 'var(--bg-input)', color: 'var(--text-main)', outline: 'none' }, 
+  textMain: { color: 'var(--text-main)', fontWeight: '800', letterSpacing: '-0.5px' },
 
   loginContainer: { 
-    background: 'white', padding: '50px 40px', borderRadius: '24px', 
+    background: 'var(--bg-card)', padding: '50px 40px', borderRadius: '24px', 
     boxShadow: '0 20px 50px rgba(0,0,0,0.08)',
     maxWidth: '450px', width: '90%', margin: '10vh auto', 
     display: 'flex', flexDirection: 'column', gap: '20px', boxSizing: 'border-box'
@@ -21,8 +21,8 @@ export const styles = {
   gridColumnSide: { flex: '1 1 30%', minWidth: '300px', width: '100%', boxSizing: 'border-box' },
   
   card: { 
-    background: 'white', padding: '25px', borderRadius: '24px', 
+    background: 'var(--bg-card)', padding: '25px', borderRadius: '24px', 
     boxShadow: '0 10px 30px rgba(0,0,0,0.03)', marginBottom: '20px', 
-    border: '1px solid #f1f5f9', boxSizing: 'border-box', width: '100%'
+    border: '1px solid var(--border-color)', boxSizing: 'border-box', width: '100%'
   }
 };

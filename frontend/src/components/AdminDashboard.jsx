@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { styles } from '../styles';
-import { toast } from 'react-hot-toast'; // 🌟 ÚJ IMPORT
+import { toast } from 'react-hot-toast';
 
 function AdminDashboard({ user, sandwiches, loadSandwiches }) {
   const [adminOrders, setAdminOrders] = useState([]);
@@ -48,7 +48,7 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
       setAdminSummary(await resSummary.json());
       setAdminUsers(await resUsers.json());
     } catch (error) {
-      toast.error("Hiba az admin adatok betöltésekor!"); // 🌟 HIBA TOAST
+      toast.error("Hiba az admin adatok betöltésekor!"); 
     } finally {
       setIsLoadingAdmin(false); 
     }
@@ -64,11 +64,11 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
         body: JSON.stringify({ role: newRole }) 
       });
       if (res.ok) {
-        toast.success("Jogosultság módosítva!"); // 🌟 SIKER TOAST
+        toast.success("Jogosultság módosítva!");
         loadAdminData();
       } else {
         const data = await res.json();
-        toast.error(data.error); // 🌟 HIBA TOAST
+        toast.error(data.error);
       }
     } catch (err) {
       toast.error("Hiba a művelet során!");
@@ -130,10 +130,10 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
       });
       if (res.ok) {
         setAdminOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
-        toast.success("A rendelés sikeresen törölve!"); // 🌟 SIKER TOAST
+        toast.success("A rendelés sikeresen törölve!"); 
       } else {
         const data = await res.json();
-        toast.error(data.error); // 🌟 HIBA TOAST
+        toast.error(data.error); 
       }
     } catch (error) {
       toast.error("Szerverhiba történt a művelet során.");
@@ -143,27 +143,27 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
   return (
     <div style={styles.gridContainer}>
       {isLoadingAdmin ? (
-        <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', width: '100%', color: '#6b7280' }}>
+        <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', width: '100%', color: 'var(--text-muted)' }}>
           <span className="spinner" style={{ borderTopColor: '#4f46e5', width: '50px', height: '50px', marginBottom: '20px' }}></span>
-          <h2 style={{ color: '#475569' }}>Admin adatok szinkronizálása...</h2>
+          <h2 style={{ color: 'var(--text-muted)' }}>Admin adatok szinkronizálása...</h2>
         </div>
       ) : (
         <>
           <div style={styles.gridColumnMain}>
             <h2 style={styles.textMain}>📊 Eheti Összesített Beszerzés</h2>
             {adminSummary && (
-              <div style={{ ...styles.card, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+              <div style={{ ...styles.card, background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
                 <ul style={{ paddingLeft: '0', fontSize: '16px', lineHeight: '2', listStyle: 'none' }}>
                   {Object.entries(getDetailedSummary()).map(([sandwichName, data]) => (
-                    <li key={sandwichName} style={{ marginBottom: '10px', borderBottom: '1px solid #bfdbfe', paddingBottom: '10px' }}>
+                    <li key={sandwichName} style={{ marginBottom: '10px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span><b>{data.total} db</b> - {sandwichName}</span>
+                        <span style={{ color: 'var(--text-main)' }}><b>{data.total} db</b> - {sandwichName}</span>
                         <button onClick={() => setExpandedSandwiches(prev => ({ ...prev, [sandwichName]: !prev[sandwichName] }))} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
                           {expandedSandwiches[sandwichName] ? '🔼 Bezár' : '🔽 Kik rendelték?'}
                         </button>
                       </div>
                       {expandedSandwiches[sandwichName] && (
-                        <ul style={{ paddingLeft: '20px', marginTop: '5px', fontSize: '14px', color: '#475569', listStyleType: 'disc' }}>
+                        <ul style={{ paddingLeft: '20px', marginTop: '5px', fontSize: '14px', color: 'var(--text-muted)', listStyleType: 'disc' }}>
                           {Object.entries(data.buyers).map(([buyer, qty]) => (
                             <li key={buyer}><b>{buyer}:</b> {qty} db</li>
                           ))}
@@ -172,32 +172,32 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
                     </li>
                   ))}
                 </ul>
-                <h3 style={{ margin: '20px 0 0 0', color: '#1e40af' }}>Mindösszesen: {adminSummary.totalQuantity} db szendvics | Összérték: {adminSummary.totalPrice} Ft</h3>
+                <h3 style={{ margin: '20px 0 0 0', color: 'var(--text-main)' }}>Mindösszesen: {adminSummary.totalQuantity} db szendvics | Összérték: {adminSummary.totalPrice} Ft</h3>
               </div>
             )}
 
             <h2 style={{...styles.textMain, marginTop: '40px' }}>Részletes rendelési lista</h2>
             {[...adminOrders]
               .sort((a, b) => {
-                if (a.isPaid === b.isPaid) return 0; // Ha azonos a státuszuk, marad a dátum szerinti sorrend
-                return a.isPaid ? 1 : -1; // A fizetetlen (false) előre kerül, a fizetett (true) hátra
+                if (a.isPaid === b.isPaid) return 0; 
+                return a.isPaid ? 1 : -1; 
               })
               .map(order => (
               <div key={order.id} style={{ ...styles.card, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px' }}>
                 <div style={{ flex: '1 1 250px', minWidth: '200px' }}>
-                  <h3 style={{ margin: '0 0 5px 0', color: '#334155' }}>{order.user?.name}</h3>
-                  <span style={{ fontSize: '13px', color: '#64748b' }}>{new Date(order.createdAt).toLocaleDateString('hu-HU')}</span>
-                  <ul style={{ marginTop: '10px', paddingLeft: '20px', color: '#475569' }}>
+                  <h3 style={{ margin: '0 0 5px 0', color: 'var(--text-main)' }}>{order.user?.name}</h3>
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{new Date(order.createdAt).toLocaleDateString('hu-HU')}</span>
+                  <ul style={{ marginTop: '10px', paddingLeft: '20px', color: 'var(--text-main)' }}>
                     {order.items.map(i => <li key={i.id} style={{ marginBottom: '4px' }}>{i.quantity}x {i.sandwich?.name}</li>)}
                   </ul>
                   {order.feedback && (
-                    <div style={{ marginTop: '10px', background: '#fee2e2', borderLeft: '4px solid #ef4444', padding: '8px 12px', borderRadius: '4px', fontSize: '14px', color: '#7f1d1d', maxWidth: '100%' }}>
+                    <div style={{ marginTop: '10px', background: 'var(--bg-input)', borderLeft: '4px solid #ef4444', padding: '8px 12px', borderRadius: '4px', fontSize: '14px', color: '#ef4444', maxWidth: '100%' }}>
                       ⚠️ <b>Probléma jelentve:</b> {order.feedback}
                     </div>
                   )}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px', flex: '1 1 auto', minWidth: '150px' }}>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b' }}>{order.totalPrice} Ft</div>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-main)' }}>{order.totalPrice} Ft</div>
                   <div style={{ display: 'flex', gap: '8px', width: '100%', justifyContent: 'flex-end' }}>
                     <button 
                       onClick={async () => {
@@ -223,21 +223,21 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
           <div style={styles.gridColumnSide}>
             <h2 style={styles.textMain}>🍔 Kínálat Módosítása</h2>
             <div style={styles.card}>
-              <form onSubmit={handleAddSandwich} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '25px', paddingBottom: '25px', borderBottom: '1px solid #e2e8f0' }}>
-                <h4 style={{ margin: 0 }}>Új tétel hozzáadása</h4>
+              <form onSubmit={handleAddSandwich} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '25px', paddingBottom: '25px', borderBottom: '1px solid var(--border-color)' }}>
+                <h4 style={{ margin: 0, color: 'var(--text-main)' }}>Új tétel hozzáadása</h4>
                 <input type="text" placeholder="Szendvics neve" value={newSandwichName} onChange={e => setNewSandwichName(e.target.value)} required style={styles.input}/>
                 <input type="number" placeholder="Ára (Ft)" value={newSandwichPrice} onChange={e => setNewSandwichPrice(e.target.value)} required style={styles.input}/>
                 <button type="submit" style={styles.btnSuccess}>+ Mentés a kínálatba</button>
               </form>
 
-              <h4 style={{ marginBottom: '15px' }}>Jelenlegi Finomságok</h4>
+              <h4 style={{ marginBottom: '15px', color: 'var(--text-main)' }}>Jelenlegi Finomságok</h4>
               {sandwiches.map(sw => (
-                <div key={sw.id} style={{ padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '10px', background: sw.isActive ? 'white' : '#f1f5f9', opacity: sw.isActive ? 1 : 0.7 }}>
+                <div key={sw.id} style={{ padding: '12px', border: '1px solid var(--border-color)', borderRadius: '8px', marginBottom: '10px', background: sw.isActive ? 'var(--bg-card)' : 'var(--bg-input)', opacity: sw.isActive ? 1 : 0.7 }}>
                   {editingSandwichId === sw.id ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <input type="text" value={editSandwichName} onChange={e => setEditSandwichName(e.target.value)} style={styles.input} />
                       <input type="number" value={editSandwichPrice} onChange={e => setEditSandwichPrice(e.target.value)} style={styles.input} />
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: 'var(--text-main)' }}>
                         <input type="checkbox" checked={editSandwichIsActive} onChange={e => setEditSandwichIsActive(e.target.checked)} style={{ width: '20px', height: '20px' }}/>
                         Elérhető a kínálatban (Aktív)
                       </label>
@@ -248,9 +248,9 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
                     </div>
                   ) : (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
+                      <div style={{ color: 'var(--text-main)' }}>
                         <b>{sw.name}</b> {sw.isActive ? '✅' : '❌'}<br/>
-                        <span style={{ color: sw.isActive ? '#10b981' : '#64748b' }}>{sw.price} Ft</span>
+                        <span style={{ color: sw.isActive ? '#10b981' : 'var(--text-muted)' }}>{sw.price} Ft</span>
                       </div>
                       <button onClick={() => { setEditingSandwichId(sw.id); setEditSandwichName(sw.name); setEditSandwichPrice(sw.price); setEditSandwichIsActive(sw.isActive); }} style={{ ...styles.btnPrimary, padding: '6px 12px', fontSize: '13px', background: '#f59e0b' }}>Szerkesztés</button>
                     </div>
@@ -265,7 +265,7 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
             <div style={{ ...styles.card, overflowX: 'auto' }}>
               <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#64748b' }}>
+                  <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)' }}>
                     <th style={{ padding: '12px' }}>Név</th>
                     <th style={{ padding: '12px' }}>E-mail cím</th>
                     <th style={{ padding: '12px' }}>Szerepkör</th>
@@ -274,11 +274,11 @@ function AdminDashboard({ user, sandwiches, loadSandwiches }) {
                 </thead>
                 <tbody>
                   {adminUsers.map(u => (
-                    <tr style={{ borderBottom: '1px solid #f1f5f9' }} key={u.id}>
-                      <td style={{ padding: '12px', fontWeight: 'bold' }}>{u.name || '-'}</td>
-                      <td style={{ padding: '12px', color: '#475569' }}>{u.email}</td>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)' }} key={u.id}>
+                      <td style={{ padding: '12px', fontWeight: 'bold', color: 'var(--text-main)' }}>{u.name || '-'}</td>
+                      <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{u.email}</td>
                       <td style={{ padding: '12px' }}>
-                        <span style={{ padding: '6px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', background: u.role === 'ADMIN' ? '#dbeafe' : '#f1f5f9', color: u.role === 'ADMIN' ? '#1e40af' : '#64748b' }}>
+                        <span style={{ padding: '6px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', background: u.role === 'ADMIN' ? 'rgba(59, 130, 246, 0.2)' : 'var(--bg-input)', color: u.role === 'ADMIN' ? '#3b82f6' : 'var(--text-muted)' }}>
                           {u.role === 'ADMIN' ? 'Adminisztrátor' : 'Felhasználó'}
                         </span>
                       </td>

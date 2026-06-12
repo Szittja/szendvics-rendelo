@@ -8,12 +8,12 @@ function SandwichCard({ sw, quantities, setQuantities, isOrderingOpen, addToCart
       
       {/* Szendvics neve és ára */}
       <div>
-        <h3 style={{ margin: '0 0 5px 0', fontSize: '18px' }}>{sw.name}</h3>
+        <h3 style={{ margin: '0 0 5px 0', fontSize: '18px', color: 'var(--text-main)' }}>{sw.name}</h3>
         <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '16px' }}>{sw.price} Ft</span>
       </div>
       
       {/* Beviteli mező és Kosárba gomb */}
-      <div style={{ display: 'flex', gap: '12px', marginTop: '15px', borderTop: '1px solid #f1f5f9', paddingTop: '15px', justifyContent: 'center', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '12px', marginTop: '15px', borderTop: '1px solid var(--border-color)', paddingTop: '15px', justifyContent: 'center', alignItems: 'center' }}>
         <input 
           type="number" 
           min="1" 
@@ -36,8 +36,8 @@ function SandwichCard({ sw, quantities, setQuantities, isOrderingOpen, addToCart
             }
           }}
           style={{ 
-            width: '60px', height: '48px', padding: '0', textAlign: 'center', borderRadius: '12px', border: 'none', background: '#f1f5f9', fontWeight: '900', fontSize: '18px', color: '#1e293b', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)', boxSizing: 'border-box', 
-            ...(!isOrderingOpen ? { background: '#e2e8f0', color: '#94a3b8', cursor: 'not-allowed' } : {}) 
+            width: '60px', height: '48px', padding: '0', textAlign: 'center', borderRadius: '12px', border: 'none', background: 'var(--bg-input)', fontWeight: '900', fontSize: '18px', color: 'var(--text-main)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)', boxSizing: 'border-box', 
+            ...(!isOrderingOpen ? { opacity: 0.5, cursor: 'not-allowed' } : {}) 
           }} 
         />
 

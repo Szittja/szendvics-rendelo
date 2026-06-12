@@ -81,6 +81,17 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
+const webpush = require('web-push');
+
+// 🌟 VAPID beállítások az értesítésekhez
+webpush.setVapidDetails(
+  'mailto:szittja21@gmail.com',
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
+
+console.log("🔑 BACKEND Publikus Kulcs:", process.env.VAPID_PUBLIC_KEY ? process.env.VAPID_PUBLIC_KEY.substring(0, 15) + "..." : "HIÁNYZIK!");
+
 // --- IDŐABLAK ÉS KARBANTARTÁS SEGÉDFÜGGVÉNYEK ---
 const getStartOfCurrentWeek = () => {
   const now = new Date();
@@ -140,9 +151,170 @@ app.get('/api/ping', async (req, res) => {
   }
 });
 
+// 📢 Újdonságok (Changelog) lekérése
+app.get('/api/changelog', async (req, res) => {
+  try {
+    // Lekérjük az összes frissítést az adatbázisból
+    const logs = await prisma.changelog.findMany();
+    
+    // 🌟 OKOS RENDEZÉS: Verziószám alapján csökkenő sorrendbe rakjuk
+    // Ez garantálja, hogy a legnagyobb verzió (legújabb) lesz mindig legfelül, 
+    // függetlenül attól, milyen sorrendben írtad a JSON fájlba!
+    logs.sort((a, b) => b.version.localeCompare(a.version, undefined, { numeric: true }));
+
+    res.json(logs);
+  } catch (error) {
+    console.error("Hiba a changelog lekérésekor:", error);
+    res.status(500).json({ error: "Nem sikerült lekérni a frissítéseket." });
+  }
+});
+
 // =====================================================================
 // --- VÉGPONTOK (Most már Zod védelemmel!) ---
 // =====================================================================
+
+// 🔔 ÚJ: PUSH ÉRTESÍTÉS FELIRATKOZÁS
+app.post('/api/notifications/subscribe', authenticateToken, async (req, res) => {
+  try {
+    const subscription = req.body;
+    const userId = req.user.id;
+
+    // Megnézzük, van-e már ilyen eszköz beregisztrálva
+    const existingSub = await prisma.pushSubscription.findUnique({
+      where: { endpoint: subscription.endpoint }
+    });
+
+    if (existingSub) {
+      // Ha már létezik, frissítjük, hogy biztosan a jelenlegi userhez tartozzon
+      await prisma.pushSubscription.update({
+        where: { endpoint: subscription.endpoint },
+        data: { userId, keys: subscription.keys }
+      });
+    } else {
+      // Ha új eszköz (pl. új telefon), elmentjük
+      await prisma.pushSubscription.create({
+        data: { userId, endpoint: subscription.endpoint, keys: subscription.keys }
+      });
+    }
+
+    res.status(201).json({ message: "Sikeresen feliratkoztál az értesítésekre!" });
+  } catch (error) {
+    console.error("Hiba a push feliratkozásnál:", error);
+    res.status(500).json({ error: "Hiba az értesítés beállításakor." });
+  }
+});
+
+// 🔔 ÚJ: PUSH ÉRTESÍTÉS KÜLDÉSE (Szigorúan csak Adminoknak)
+app.post('/api/admin/notifications/send', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const { title, message, url } = req.body;
+    
+    // Lekérjük az összes feliratkozott eszközt
+    const subscriptions = await prisma.pushSubscription.findMany();
+    
+    if (subscriptions.length === 0) {
+      return res.status(404).json({ error: "Még senki sem iratkozott fel az értesítésekre!" });
+    }
+
+    // Ezt a csomagot fogja megkapni a telefon/böngésző
+    const payload = JSON.stringify({ title, body: message, url: url || '/' });
+    let successCount = 0;
+
+    // Végigmegyünk az összes eszközön, és kilőjük az üzenetet
+    for (const sub of subscriptions) {
+      try {
+        const pushConfig = {
+          endpoint: sub.endpoint,
+          keys: typeof sub.keys === 'string' ? JSON.parse(sub.keys) : sub.keys
+        };
+        await webpush.sendNotification(pushConfig, payload);
+        successCount++;
+      } catch (err) {
+        // Ha a Google/Apple visszadobja (pl. a user letiltotta az értesítést), töröljük az adatbázisból
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          await prisma.pushSubscription.delete({ where: { id: sub.id } });
+        } else {
+          console.error("Hiba egy eszköz értesítésekor:", err);
+        }
+      }
+    }
+
+    res.json({ message: `Értesítés sikeresen elküldve ${successCount} eszközre! 🚀` });
+  } catch (error) {
+    console.error("Szerverhiba értesítés küldésekor:", error);
+    res.status(500).json({ error: "Belső hiba az értesítések küldésekor." });
+  }
+});
+
+// 🔕 ÚJ: PUSH ÉRTESÍTÉS LEIRATKOZÁS
+app.post('/api/notifications/unsubscribe', authenticateToken, async (req, res) => {
+  try {
+    const { endpoint } = req.body;
+    
+    // Kitöröljük az adatbázisból a telefonhoz/böngészőhöz tartozó egyedi azonosítót
+    await prisma.pushSubscription.delete({
+      where: { endpoint: endpoint }
+    });
+    
+    res.json({ message: "Sikeresen leiratkoztál az értesítésekről!" });
+  } catch (error) {
+    // A P2025 egy Prisma hibakód: azt jelenti, hogy az adat már eleve nem is létezett
+    if (error.code === 'P2025') {
+      return res.json({ message: "Már le voltál iratkozva." });
+    }
+    console.error("Hiba leiratkozáskor:", error);
+    res.status(500).json({ error: "Hiba az értesítés kikapcsolásakor." });
+  }
+});
+
+// 💸 Értesítés küldése KIZÁRÓLAG a tartozóknak
+app.post('/api/notifications/send-debtors', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: "Nincs jogosultságod ehhez a művelethez!" });
+  }
+
+  try {
+    const { title, body } = req.body;
+
+    // Szűrés a tartozókra a sémád alapján
+    const debtorsSubscriptions = await prisma.pushSubscription.findMany({
+      where: {
+        user: {
+          orders: {
+            some: {
+              isPaid: false
+            }
+          }
+        }
+      }
+    });
+
+    if (debtorsSubscriptions.length === 0) {
+      return res.json({ message: "Szuper hír: Nincs olyan tartozó, akinek aktív lenne az értesítése!" });
+    }
+
+    // Értesítések kiküldése
+    const sendPromises = debtorsSubscriptions.map(sub => {
+      const pushConfig = {
+        endpoint: sub.endpoint,
+        keys: sub.keys // Mivel a sémában Json, itt egyből használhatjuk
+      };
+      
+      return webpush.sendNotification(pushConfig, JSON.stringify({ title, body }))
+        .catch(err => {
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            return prisma.pushSubscription.delete({ where: { id: sub.id } });
+          }
+        });
+    });
+
+    await Promise.all(sendPromises);
+    res.json({ message: `Sikeresen elküldve ${debtorsSubscriptions.length} tartozó eszközére!` });
+  } catch (error) {
+    console.error("Hiba a célzott küldéskor:", error);
+    res.status(500).json({ error: "Hiba az értesítések küldésekor." });
+  }
+});
 
 app.get('/api/settings', async (req, res) => {
   try {

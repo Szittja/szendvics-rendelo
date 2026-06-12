@@ -1,3 +1,31 @@
+/* ☀️ VILÁGOS MÓD (Alapértelmezett) */
+:root {
+  --bg-main: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  --bg-header: white;
+  --bg-card: white;
+  --bg-input: #f8fafc;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --bg-warning: #fef3c7;
+  --border-warning: #fde68a;
+  --text-warning: #92400e;
+}
+
+/* 🌙 SÖTÉT MÓD */
+[data-theme='dark'] {
+  --bg-main: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  --bg-header: #1e293b;
+  --bg-card: #1e293b;
+  --bg-input: #334155;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+  --bg-warning: #422006;     /* Sötétbarna háttér */
+  --border-warning: #78350f; /* Sötétebb barna keret */
+  --text-warning: #fcd34d;   /* Világossárga, jól olvasható szöveg */
+}
+
 .counter {
   font-size: 16px;
   padding: 5px 10px;

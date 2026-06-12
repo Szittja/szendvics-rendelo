@@ -15,6 +15,7 @@ model User {
   role      String   @default("USER")
   orders    Order[]
   mustChangePassword Boolean @default(false)
+  subscriptions PushSubscription[]
 }
 
 model Sandwich {
@@ -48,4 +49,21 @@ model OrderItem {
 model Settings {
   id         Int     @id @default(1)
   isVacation Boolean @default(false)
+}
+
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  keys      Json
+  createdAt DateTime @default(now())
+}
+
+model Changelog {
+  id        Int      @id @default(autoincrement())
+  version   String   @unique
+  date      String
+  changes   Json
+  createdAt DateTime @default(now())
 }
