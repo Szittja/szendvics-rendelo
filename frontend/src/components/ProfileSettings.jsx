@@ -69,6 +69,7 @@ function ProfileSettings({ user, setUser, setIsProfileView, isSubscribed, subscr
           </button>
         </form>
 
+        {/* 🔕 IDEIGLENESEN KIKAPCSOLVA AZ ÉRTESÍTÉSEK BLOKK
         <div style={{ marginTop: '30px', padding: '15px', borderTop: '1px solid var(--border-color)' }}>
           <h4 style={{ margin: '0 0 10px 0', color: 'var(--text-main)' }}>Értesítések beállítása</h4>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '15px' }}>
@@ -93,6 +94,7 @@ function ProfileSettings({ user, setUser, setIsProfileView, isSubscribed, subscr
             {isSubscribed ? '🔕 Értesítések kikapcsolása' : '🔔 Értesítések bekapcsolása'}
           </button>
         </div>
+        */}
 
       </div>
       <button onClick={() => setIsProfileView(false)} style={{ ...styles.btnPrimary, background: '#64748b', boxShadow: 'none', marginTop: '15px' }}>⬅️ Vissza a rendeléshez</button>
