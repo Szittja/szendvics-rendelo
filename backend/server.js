@@ -231,7 +231,7 @@ app.post('/api/admin/notifications/send', authenticateToken, isAdmin, async (req
         successCount++;
       } catch (err) {
         // Ha a Google/Apple visszadobja (pl. a user letiltotta az értesítést), töröljük az adatbázisból
-        if (err.statusCode === 410 || err.statusCode === 404) {
+        if (err.statusCode === 410 || err.statusCode === 404 || err.statusCode ===403) {
           await prisma.pushSubscription.delete({ where: { id: sub.id } });
         } else {
           console.error("Hiba egy eszköz értesítésekor:", err);
